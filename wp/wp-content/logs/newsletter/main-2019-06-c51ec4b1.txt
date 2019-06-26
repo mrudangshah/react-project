@@ -1,0 +1,12 @@
+13-06-2019 08:49:00 - ERROR - m: 8.8 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago
+13-06-2019 12:34:25 - ERROR - m: 8.8 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago
+13-06-2019 12:34:25 - ERROR - m: 8.8 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago
+17-06-2019 08:27:52 - ERROR - m: 8.7 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago
+17-06-2019 08:32:45 - ERROR - m: 8.7 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago
+17-06-2019 08:36:18 - ERROR - m: 8.7 MB, u: 0 - Blocked by transient newsletter_main_engine set 1 seconds ago
+17-06-2019 09:11:10 - ERROR - m: 8.7 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago
+18-06-2019 09:50:57 - ERROR - m: 8.8 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago
+18-06-2019 12:41:08 - ERROR - m: 8.8 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago
+19-06-2019 11:55:51 - ERROR - m: 8.8 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago
+20-06-2019 06:04:33 - ERROR - m: 8.8 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago
+25-06-2019 09:26:40 - ERROR - m: 8.8 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago
