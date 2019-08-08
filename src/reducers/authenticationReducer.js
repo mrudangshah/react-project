@@ -1,5 +1,5 @@
-let tpwToken = localStorage.getItem('tpwToken');
-let loggedUser = JSON.parse(localStorage.getItem('user'));
+let tpwToken = (typeof window !== 'undefined') ? localStorage.getItem('tpwToken') : null;
+let loggedUser = (typeof window !== 'undefined') ? JSON.parse(localStorage.getItem('user')) : null;
 let isLoggedIn = tpwToken ? true : false;
 let authUser = loggedUser ? loggedUser : {};
 

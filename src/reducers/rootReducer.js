@@ -8,6 +8,8 @@ import homeData from './homeReducer';
 import singleData from './singleReducer';
 import blog from './blogReducer';
 import page from './index';
+import event from './eventReducer';
+import singleEvent from './singleEvent';
 
 export default combineReducers({
     authentication,
@@ -19,4 +21,6 @@ export default combineReducers({
     page,
     homeData,
     singleData,
+    event,
+    singleEvent
 });

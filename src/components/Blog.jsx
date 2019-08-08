@@ -7,6 +7,7 @@ import { tpwConfig } from '../config';
 import { TPW } from './../constants';
 import { IMAGE } from './../constants/image';
 import { getBlog, getOffsetData } from './../actions/blogAction';
+import { getEvents } from './../actions/eventAction';
 import NotFound  from './NotFound';
 
 const siteurl = tpwConfig.API_URL;
@@ -36,14 +37,18 @@ class Blog extends Component {
     });
   }
 
+  componentWillMount() {
+    const { getEvents } = this.props;
+    const blogType = '/' + this.props.route.match.params.blog;
+    console.log(blogType)
+    this.setState({ type: blogType });
+    if( blogType === '/mark-your-planner' ){
+      getEvents(); //Call the events
+    } else { this.getBlogContent(blogType); }
+  }
+  
   componentDidMount() {
     window.addEventListener('scroll', this.loadOnScroll);
-  }
-
-  componentWillMount() {
-    const blogType = '/' + this.props.route.match.params.blog;
-    this.setState({ type: blogType });
-    this.getBlogContent(blogType);
   }
 
   getBlogContent = (type) => {
@@ -150,7 +155,7 @@ class Blog extends Component {
                 if (index % 2 === 0) {
                   return <div key={index} className="blog_cnt">
                     <div className="col_blog">
-                      <div className="inner_col_blog">
+                      <div className="inner_col_blog height_auto">
                         {item.post_format.length > 0 && item.post_format[0].name === 'Video' ?
                           <video controls>
                             <source src={item.acf.video.url} type="video/mp4"></source>
@@ -212,7 +217,7 @@ class Blog extends Component {
                 else {
                   return <div key={index} className="blog_cnt">
                     <div className="col_blog float-right">
-                      <div className="inner_col_blog">
+                      <div className="inner_col_blog height_auto">
                         {item.post_format.length > 0 && item.post_format[0].name === 'Video' ?
                           <video width="651" controls>
                             <source src={item.acf.video.url} type="video/mp4"></source>
@@ -287,31 +292,40 @@ class Blog extends Component {
 
   markPlannerView = () => {
     const { type } = this.state;
-    const { blogData, blogLoading } = this.props;
-    if(blogData.length !== 0 ) {
+    const { eventData, eventLoading } = this.props;
+    
+    if(eventData.length !== 0 ) {
     return (
       <section id="blog" className="markyourplanner">
         {
-          blogLoading === false ?
+          eventLoading === false ?
             <div className="inner_blog">
-              {blogData.length > 0 ? <div className="blog_title" style={{ 'background': blogData[0].background_color }} >
-                <h1><img src={"" + blogData[0].cat_icon_white.url} alt={blogData[0].cat_icon_white.title} />{blogData[0].terms[0].name}</h1>
-                <p>{blogData[0].terms[0].description}</p>
+              {/* {eventData.length > 0 ? <div className="blog_title" style={{ 'background': eventData[0].background_color }} >
+                <h1><img src={"" + eventData[0].cat_icon_white.url} alt={eventData[0].cat_icon_white.title} />{eventData[0].terms[0].name}</h1>
+                <p>{eventData[0].terms[0].description}</p>
+              </div> : ''} */}
+              {eventData.length > 0 ? <div className="blog_title" style={{ 'background': eventData[0].background_color }} >
+                <h1><img src={siteurl+'/wp/wp-content/uploads/2019/03/plnnner_icon_white.svg'} alt={eventData[0].title} />{eventData[0].terms[0].name}</h1>
+                <p>{eventData[0].terms[0].description}</p>
               </div> : ''}
-              {blogData.map((item, index) => {
+              {eventData.map((item, index) => {
                 let boundItemClick = this.savePost.bind(this, item);
                 if (index % 2 === 0) {
                   return <div key={index} className="blog_cnt">
                     <div className="col_blog">
-                      <div className="inner_col_blog">
-                        <img className="img_respon" src={item.acf ? item.acf.single_featured_image ? item.acf.single_featured_image.url : sample_image : ''} alt={item.acf.single_featured_image.alt} />
+                      <div className="inner_col_blog height_auto">
+                        {/* <img className="img_respon" src={item.acf ? item.acf.single_featured_image ? item.acf.single_featured_image.url : sample_image : ''} alt={item.acf.single_featured_image.alt} /> */}
+                        <img className="img_respon" src={item.media ? item.media.medium : sample_image } alt={item.title} />
                       </div>
                     </div>
                     <div className="col_blog">
                       <div className="inner_col_blog pad_around">
                         <div className="main_blog_dtls">
                           <div className="blog_dtls orange">
-                            <div className="blog_dtltitle orange"><img src={item.cat_icon.url} alt={item.cat_icon.alt} />{item.terms[0].name}</div>
+                            <div className="blog_dtltitle orange">
+                              {/* <img src={item.cat_icon.url} alt={item.cat_icon.alt} />{item.terms[0].name} */}
+                              <img src={siteurl+'/wp/wp-content/uploads/2019/01/plnnner_icon.svg'} alt={eventData[0].title} />{item.terms[0].name}
+                            </div>
                             <div className="post_type">Event</div>
                             <h2>{htmlToReactParser.parse(item.title)}</h2>
                             <p>{htmlToReactParser.parse(_.truncate(item.excerpt, {'length': TPW.EXCERPT_LENGTH}))}</p>
@@ -349,15 +363,19 @@ class Blog extends Component {
                 else {
                   return <div key={index} className="blog_cnt">
                     <div className="col_blog float-right">
-                      <div className="inner_col_blog">
-                        <img className="img_respon" src={item.acf ? item.acf.single_featured_image ? item.acf.single_featured_image.url : sample_image : ''} alt={item.acf.single_featured_image.alt} />
+                      <div className="inner_col_blog height_auto">
+                        {/* <img className="img_respon" src={item.acf ? item.acf.single_featured_image ? item.acf.single_featured_image.url : sample_image : ''} alt={item.acf.single_featured_image.alt} /> */}
+                        <img className="img_respon" src={item.media ? item.media.medium : sample_image } alt={item.title} />
                       </div>
                     </div>
                     <div className="col_blog float-left">
                       <div className="inner_col_blog pad_around">
                         <div className="main_blog_dtls">
                           <div className="blog_dtls orange">
-                            <div className="blog_dtltitle orange"><img src={item.cat_icon.url} alt={item.cat_icon.alt} />{item.terms[0].name}</div>
+                            <div className="blog_dtltitle orange">
+                              {/* <img src={item.cat_icon.url} alt={item.cat_icon.alt} />{item.terms[0].name} */}
+                              <img src={siteurl+'/wp/wp-content/uploads/2019/01/plnnner_icon.svg'} alt={eventData[0].title} />{item.terms[0].name}
+                            </div>
                             <div className="post_type">Event</div>
                             <h2>{htmlToReactParser.parse(item.title)}</h2>
                             <p>{htmlToReactParser.parse(_.truncate(item.excerpt, {'length': TPW.EXCERPT_LENGTH}))}</p>
@@ -401,7 +419,7 @@ class Blog extends Component {
     );
     } else{ 
       return( 
-        blogLoading === false ?
+        eventLoading === false ?
         this.noRecord() 
         : ''
       )
@@ -425,7 +443,7 @@ class Blog extends Component {
                   if (index % 2 === 0) {
                     return <div key={index} className="blog_cnt">
                       <div className="col_blog">
-                        <div className="inner_col_blog">
+                        <div className="inner_col_blog height_auto">
                         {item.post_format.length > 0 && item.post_format[0].name === 'Video' ?
                           <video controls>
                             <source src={item.acf.video.url} type="video/mp4"></source>
@@ -480,7 +498,7 @@ class Blog extends Component {
                   else {
                     return <div key={index} className="blog_cnt">
                       <div className="col_blog float-right">
-                        <div className="inner_col_blog">
+                        <div className="inner_col_blog height_auto">
                         {item.post_format.length > 0 && item.post_format[0].name === 'Video' ?
                           <video controls>
                             <source src={item.acf.video.url} type="video/mp4"></source>
@@ -549,7 +567,6 @@ class Blog extends Component {
   }
 
   planConnectView = () => {
-    const { type } = this.state;
     const { blogData, blogLoading } = this.props;
     if(blogData.length !== 0 ) {
     return (
@@ -566,7 +583,7 @@ class Blog extends Component {
               if (index % 2 === 0) {
                 return <div key={index} className="blog_cnt">
                   <div className="col_blog">
-                    <div className="inner_col_blog">
+                    <div className="inner_col_blog height_auto">
                     {item.post_format.length > 0 && item.post_format[0].name === 'Video' ?
                       <video controls>
                         <source src={item.acf.video.url} type="video/mp4"></source>
@@ -621,7 +638,7 @@ class Blog extends Component {
               else {
                 return <div key={index} className="blog_cnt">
                   <div className="col_blog float-right">
-                    <div className="inner_col_blog">
+                    <div className="inner_col_blog height_auto">
                     {item.post_format.length > 0 && item.post_format[0].name === 'Video' ?
                       <video controls>
                         <source src={item.acf.video.url} type="video/mp4"></source>
@@ -707,7 +724,7 @@ class Blog extends Component {
                 if (index % 2 === 0) {
                   return <div key={index} className="blog_cnt">
                     <div className="col_blog">
-                      <div className="inner_col_blog">
+                      <div className="inner_col_blog height_auto">
                         {item.post_format.length > 0 && item.post_format[0].name === 'Video' ?
                         <video controls>
                           <source src={item.acf.video.url} type="video/mp4"></source>
@@ -759,7 +776,7 @@ class Blog extends Component {
                 else {
                   return <div key={index} className="blog_cnt">
                     <div className="col_blog float-right">
-                      <div className="inner_col_blog">
+                      <div className="inner_col_blog height_auto">
                       {item.post_format.length > 0 && item.post_format[0].name === 'Video' ?
                         <video controls>
                           <source src={item.acf.video.url} type="video/mp4"></source>
@@ -828,7 +845,7 @@ class Blog extends Component {
     const { type } = this.state;
 
     return (
-      <div>
+      <React.Fragment>
         {
           type === '/on-the-wire' ? this.blogView() :
             type === '/mark-your-planner' ? this.markPlannerView() :
@@ -837,7 +854,7 @@ class Blog extends Component {
                   type === '/the-spread' ? this.spreadView() :
                     this.notFound()
         }
-      </div>
+      </React.Fragment>
     );
   }
 }
@@ -850,12 +867,15 @@ const mapStateToProps = state => ({
   total: state.blog.total,
   blogLoading: state.blog.blogLoading,
   itemPerRow: state.blog.itemPerRow,
-  offSetCnt: state.blog.offSetCnt
+  offSetCnt: state.blog.offSetCnt,
+  eventData: state.event.events,
+  eventLoading: state.event.eventLoading
 });
 
 const mapDispatchToProps = dispatch => ({
   getBlog: (type, offset) => { dispatch(getBlog(type, offset)) },
   getOffsetData: (type, offset) => { dispatch(getOffsetData(type, offset)) },
+  getEvents: () => { dispatch( getEvents() ) }
 })
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(Blog));

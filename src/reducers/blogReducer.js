@@ -29,7 +29,7 @@ export const blog = (state = initialState, action = {}) => {
 				blogData: action.blogData,
 				total: action.total,
 				offSetCnt: action.offSetCnt
-    }
+		}
 
     default: return state  
   }

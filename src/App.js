@@ -7,7 +7,7 @@ import './assets/css/fontawesome.min.css';
 import './assets/css/bootstrap.min.css';
 import './assets/css/slick.css';
 import './assets/css/docs.css';
-import './assets/js/slick.js';
+//import './assets/js/slick.js';
 import './assets/css/custom.css';
 
 import { custom } from '../src/assets/js/custom';
@@ -44,17 +44,17 @@ class App extends Component {
       <BrowserRouter>
           <Switch>
             { _.map(defaultRoutes, (route, key) => {
-                    const { component, path } = route;
-                    return (
-                        <Route
-                            history = {history}
-                            exact
-                            path={path}
-                            key={key}
-                            render={ (route) => <DefaultLayout component={component} route={route}/>}
-                        />
-                    )
-                }) }
+                const { component, path } = route;
+                return (
+                    <Route
+                        history = {history}
+                        exact
+                        path={path}
+                        key={key}
+                        render={ (route) => <DefaultLayout component={component} route={route}/>}
+                    />
+                )
+            }) }
 
             { _.map(sessionRoutes, (route, key) => {
                     const { component, path } = route;

@@ -4,7 +4,7 @@ import Saved from '../components/Saved';
 import Favourites from '../components/Favourites';
 import Message from '../components/Messages';
 import SearchResults from '../components/searchComponent/searchResults';
-import Single from '../components/Single1';
+import Single from '../components/Single';
 import Blog from '../components/Blog';
 
 export default {

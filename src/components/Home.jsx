@@ -11,11 +11,44 @@ import Slider from "react-slick";
 import equalheight from 'equalheight' ;
 import { getHomeItems } from './../actions/homeAction';
 import Moment from 'moment';
+import isEmpty from 'lodash/isEmpty';
 
 const siteurl = tpwConfig.API_URL;
 var HtmlToReactParser = require('html-to-react').Parser;
 var htmlToReactParser = new HtmlToReactParser();
 let sample_image = siteurl+ IMAGE.sample_image;
+
+const sliderSettings = { 
+  dots: false,
+  infinite: false,
+  speed: 300,
+  slidesToShow: 4,
+  slidesToScroll: 1,
+  responsive: [{
+      breakpoint: 1024,
+      settings: {
+        slidesToShow: 2,
+        slidesToScroll: 1,
+        infinite: true,
+        dots: false
+      }
+    },
+    {
+      breakpoint: 600,
+      settings: {
+        slidesToShow: 2,
+        slidesToScroll: 1
+      }
+    },
+    {
+      breakpoint: 480,
+      settings: {
+        slidesToShow: 1,
+        slidesToScroll: 1
+      }
+    }
+  ]
+}
 
 class Home extends Component {
   constructor(props){
@@ -102,10 +135,6 @@ class Home extends Component {
   getHomeContent = () => {
     const { homeItems, signupItems, pageLoading } = this.props;
     const that = this;
-    
-    Moment.locale('en');
-    let expiration_date = homeItems.sponsoredPosts[0].acf.expiration_date;
-    let current_date = Moment().format("MMMM DD, YYYY");
 
     return (<section id="blog">
       <div className="inner_blog">
@@ -113,7 +142,8 @@ class Home extends Component {
       {Object.keys(homeItems).map(function(type) {
           return <div key={type}>{
             type === 'twoPosts' ? that.getTwoPostContent(homeItems[type]) :
-              type === 'sponsoredPosts' ? current_date < expiration_date ? that.getSponsorPostContent(homeItems[type]) :'' :
+              type === 'sponsoredPosts' ? 
+                (( !isEmpty( homeItems.sponsoredPosts[0] ) ) && that.getSponsorPostContent(homeItems[type]) ) :
                 type === 'onePosts' ? that.getOnePostContent(homeItems[type]) :
                   type === 'communityPosts' ? that.getCommunityPostContent(homeItems[type]) :
                     type === 'threePosts' ? that.getThreePostContent(homeItems[type]) :
@@ -142,6 +172,7 @@ class Home extends Component {
     return (      
       itemObj.map((item, index) => {
         let boundItemClick = this.savePost.bind(this, item);
+        console.log(index)
         return <div key={index} className="blog_cnt">
             <div className={[index %2 === 0 ? 'col_blog' : 'col_blog float-right']}>
               <div className="inner_col_blog">
@@ -165,8 +196,7 @@ class Home extends Component {
               }
               </div>
             </div>
-            
-            <div className={[index %2 === 0 ? 'col_blog' : 'col_blog float-right']}>
+            <div className={'col_blog'}>
               <div className="inner_col_blog pad_around">
                 <div className="main_blog_dtls">
                   <div className="blog_dtls" style={{ 'borderColor': item.term_color }}>
@@ -221,16 +251,13 @@ class Home extends Component {
    */
   getOnePostContent = (itemObj) => {
     const {homeItems} = this.props; 
-    
-    let sponsored_expiration_date = homeItems.sponsoredPosts[0].acf.expiration_date;
-    let current_date = Moment().format("MMMM DD, YYYY");
 
     return (      
       itemObj.map((item, index) => {
         let boundItemClick = this.savePost.bind(this, item);
         return <div key={index} className="blog_cnt">
             
-            <div className={ current_date < sponsored_expiration_date ? 'col_blog float-right' : 'col_blog'}>
+            <div className={ ( !isEmpty(homeItems.sponsoredPosts[0]) ) ? 'col_blog float-right' : 'col_blog'}>
               <div className="inner_col_blog">
               {item.terms[0].slug === 'the-spread' ?
                   item.acf.image_gallery !== false ?
@@ -334,7 +361,7 @@ class Home extends Component {
               </div>
             </div>
             
-            <div className={[index %2 === 0 ? 'col_blog' : 'col_blog float-right']}>
+            <div className={'col_blog'}>
               <div className="inner_col_blog pad_around">
                 <div className="main_blog_dtls">
                   <div className="blog_dtls" style={{ 'borderColor': item.term_color }}>
@@ -388,16 +415,13 @@ class Home extends Component {
    * SPONSER CONTENT
    */
   getSponsorPostContent = (itemObj) => {
-
     return (      
       itemObj.map((item, index) => {
         let boundItemClick = this.savePost.bind(this, item);
         return <div key={index} className="blog_cnt">
-            
             <div className={[index %2 === 0 ? 'col_blog' : 'col_blog float-right']}>
-              <div className="inner_col_blog">
+              <div className="inner_col_blog height_auto">
                 { 
-                  
                   item.acf.image_or_video.value === 'video'?
                   <video controls>
                     <source src={item.acf.sponsored_video.url} type="video/mp4"></source>
@@ -417,7 +441,7 @@ class Home extends Component {
               <div className="inner_col_blog pad_around">
                 <div className="main_blog_dtls">
                   <div className="blog_dtls" style={{ 'borderColor': item.term_color }}>
-                    <div className="blog_dtltitle" style={{ 'color': item.term_color }}><img src={item.term_icon.url} alt={item.term_icon.alt} />{item.terms[0].name}</div>
+                    <div className="blog_dtltitle sponsored" style={{ 'color': item.term_color }}>{item.terms[0].name}</div>
                     { item.post_format.length > 0 && item.post_format[0].name  === 'Video'?
                     <div className="post_type">Video</div>
                     : ''
@@ -465,8 +489,8 @@ class Home extends Component {
    * Community Content
    */
   getCommunityPostContent = (itemObj) => {
-    const sliderSettings = { dots: false, speed: 300, slidesToShow: 4 }
-    return <section id="morelove_product">
+    
+    return <section id="morelove_product"> 
       <div className="container">
         <div className="inner_morelove">
             <h2 className="title">From the Community</h2>

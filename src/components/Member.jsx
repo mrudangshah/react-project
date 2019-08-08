@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import axios from 'axios';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router'
 import { Link } from 'react-router-dom';
@@ -42,9 +43,6 @@ class Member extends Component {
   }
 
   componentDidMount () {
-    let headers = new Headers();
-    headers.set('Authorization', 'Basic ' + base64.encode(endUsername + ":" + password));
-
     let that = this;
     const username = this.props.route.match.params.username;
     
@@ -66,8 +64,10 @@ class Member extends Component {
             resultLoading: false,
             //progress: false,
            });
-          that.getMembershipID(); //Get MemberShipId
-          that.getMember(); //Get Members
+           if(that.state.resultLoading === false){
+            that.getMembershipID(); //Get MemberShipId
+            that.getMember(); //Get Members
+           }
         } else{
           that.setState({ resultLoading: false, noSearch: true });
         }
@@ -88,21 +88,18 @@ class Member extends Component {
    * Get MemeberShipID
    */
   getMembershipID() {
+
     let that = this;
     let mmembersUrl = `${siteurl}/wp/wp-json/mp/v1/members/${that.state.userID}`;
-    let headers = new Headers();
-    headers.set('Authorization', 'Basic ' + base64.encode(endUsername + ":" + password));
-   
-    fetch(mmembersUrl, {
-      method:'GET',
-      headers: headers,
-      credentials: "same-origin",
+
+    axios(mmembersUrl, {
+      auth: {
+        username: endUsername,
+        password: password
+      }
     })
-    .then(function(response) { return response.json(); })
-    .then(function(jsonData) {
-      return JSON.stringify(jsonData);
-    })
-    .then(function(jsonStr) {
+    .then(function(response) { 
+      var jsonStr = JSON.stringify(response.data);      
       let membership = JSON.parse(jsonStr);
       if((membership.recent_subscriptions).length !== 0 ){
         let memberShipId = membership.recent_subscriptions[0].membership;
@@ -112,7 +109,6 @@ class Member extends Component {
         that.setState({ membershipStatus: true, resultLoading: false, });
       }
     });
-  
   }
 
   /**
@@ -199,7 +195,6 @@ class Member extends Component {
   callCatApi(categoryName) {
     //this.setState({ progress: true });
     let extendedTerm = categoryName ? '/cat/'+categoryName : "";
-    console.log(extendedTerm);
     let that = this;
     fetch(siteurl + memberPostsAPI + that.state.memberId + extendedTerm, {
       method: "GET",

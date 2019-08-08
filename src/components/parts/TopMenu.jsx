@@ -24,7 +24,7 @@ class TopMenu extends Component {
         <ul>
           { menuItem.map((item,index) => { 
           return <li key={index} className={item.classes.join(" ")}>
-            {item.acf != false ? <Link to={item.slug} onClick={() => this.getContent(item.slug)}>
+            {item.acf !== false ? <Link to={item.slug} onClick={() => this.getContent(item.slug)}>
             <img src={item.acf.menu_icon.url} alt={item.acf.menu_icon.alt}></img>
             {item.title}</Link> : ''}
             <div className="desk_dwn" >
@@ -32,7 +32,7 @@ class TopMenu extends Component {
                 <ul>
                 { menuItem.map((item,index) => { 
                   return <li key={index} className={item.classes[0]}>
-                    {item.acf != false ? <Link to={item.slug} className="trans" title={item.title} onClick={() => this.getContent(item.slug)}>
+                    {item.acf !== false ? <Link to={item.slug} className="trans" title={item.title} onClick={() => this.getContent(item.slug)}>
                        <img src={item.acf.menu_icon.url} className="default" alt={item.acf.menu_icon.alt} />
                       <img src={item.acf.hover_icon.url} className="hover" alt={item.acf.hover_icon.alt} />
                       
@@ -55,7 +55,7 @@ class TopMenu extends Component {
             <ul>
             { menuItem.map((item,index) => { 
               return <li key={index} className={item.classes.join(" ")}> 
-             {item.acf != false ? <a href={item.slug} className="trans" title={item.title}>
+             {item.acf !== false ? <a href={item.slug} className="trans" title={item.title}>
                 <img src={item.acf.menu_icon.url} className="default" alt={item.acf.menu_icon.alt} />
                 <img src={item.acf.hover_icon.url} className="hover" alt={item.acf.hover_icon.alt} />
                 <h4>{item.title}</h4>
@@ -71,9 +71,9 @@ class TopMenu extends Component {
   }
 
   render() {
-    const { menuItem, pageLoading } = this.props
+    const { pageLoading } = this.props
       return (
-        pageLoading == false ? this.handleTopMenu() : ''
+        pageLoading === false ? this.handleTopMenu() : ''
       );
   }
 }

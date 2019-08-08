@@ -1,34 +1,25 @@
 const initialState = {
-	singleItems: [],
 	eventItems: [],
 	pID: '',
 	comments: [],
-	relatedPosts: [],
-	singleLoading: true,
+	relatedEvents: [],
+	eventLoading: true,
 	commentLoading: true,
-	relatedLoading: true,
+	relatedEventLoading: true,
 };
 
-export const singleData = (state = initialState, action = {}) => {
+export const singleEvent = (state = initialState, action = {}) => {
   switch(action.type) {
-		case "SINGLE_LOADING_START":
+		case "SINGLE_EVENT_LOADING_START":
 			return {
 				...state,
-				singleLoading: true
+				eventLoading: true
 			}
 
-		case "SINGLE_LOADING_DONE":
+		case "SINGLE_EVENT_LOADING_DONE":
 			return {
 				...state,
-				singleLoading: false
-			}
-
-    case "SET_SINGLE_DATA":
-			return {
-				...state,
-				singleItems: action.singleItems,
-				pID: action.pID,
-				comment: action.comment
+				eventLoading: false
 			}
 
 		case "SET_SINGLE_EVENTS_DATA":
@@ -37,44 +28,44 @@ export const singleData = (state = initialState, action = {}) => {
 				eventItems: action.eventsData
 			}
 		
-		case "COMMENT_LOADING_START":
+		case "EVENT_COMMENT_LOADING_START":
 			return {
 				...state,
 				commentLoading: true
 			}
 			
-		case "COMMENT_LOADING_DONE":
+		case "EVENT_COMMENT_LOADING_DONE":
 			return {
 				...state,
 				commentLoading: false
 			}
 	
-		case "SET_COMMENT_DATA":
+		case "SET_EVENT_COMMENT_DATA":
 			return {
 				...state,
 				comments: action.commentItems,
 			}
 
-		case "RELATED_LOADING_START":
+		case "RELATED_EVENTS_LOADING_START":
 			return {
 				...state,
 				relatedLoading: true,
 			}
 		
-		case "RELATED_LOADING_DONE":
+		case "RELATED_EVENTS_LOADING_DONE":
 			return {
 				...state,
 				relatedLoading: false,
 			}
 		
-		case "SET_RELATED_DATA":
+		case "SET_RELATED_EVENTS_DATA":
 			return {
 				...state,
-				relatedPosts: action.relatedItems,
+				relatedEvents: action.relatedItems,
 			}
 
 		default: return state
   }
 }
 
-export default singleData;
+export default singleEvent;

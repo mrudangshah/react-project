@@ -37,14 +37,16 @@ export function custom() {
       });
     }
 
-    // $(window).load(function () {
-    //   equalheight('#drp_dwn .inner_drpdwn li a,.desk_dwn .inner_drpdwn li a,#blog .col_blog .inner_col_blog,.search_tab_cnt li .people_block');
-    // });
+    $(window).on('load', function () {
+      setTimeout(function() {
+        equalheight('.desk_dwn .inner_drpdwn li a, #blog .col_blog .inner_col_blog, .search_tab_cnt li .people_block');
+      }, 5000);
+    })
+
     $(window).on('load', function () {
       equalheight('.desk_dwn .inner_drpdwn li a, #blog .col_blog .inner_col_blog, .search_tab_cnt li .people_block');
-    });
-
-
+    })
+    
     $(window).resize(function () {
       equalheight('.desk_dwn .inner_drpdwn li a,#blog .col_blog .inner_col_blog,.search_tab_cnt li .people_block');
     });
@@ -177,7 +179,7 @@ export function custom() {
     /*======= Input Value Check Jquery End ========*/
 
     /*======= Lover Slider Jquery Start ========*/
-    $('#morelove_product .inner_morelove ul').slick({
+    /*$('#morelove_product .inner_morelove ul').slick({
       dots: false,
       infinite: false,
       speed: 300,
@@ -207,13 +209,13 @@ export function custom() {
           }
         }
       ]
-    });
+    });*/
 
     /*======= Lover Slider Jquery End ========*/
 
 
     /*======= Post Slider Jquery Start ========*/
-    $('#post_dtls .post_slider ul').slick({
+    /*$('#post_dtls .post_slider ul').slick({
       dots: false,
       infinite: false,
       speed: 300,
@@ -246,7 +248,7 @@ export function custom() {
         // settings: "unslick"
         // instead of a settings object
       ]
-    });
+    });*/
 
     /*======= Post Slider Jquery End ========*/
 
@@ -288,12 +290,12 @@ export function custom() {
       ]
     }
 
-    $(document).on('click', '#post_dtls .see_post h3.title', function () {
+  /*$(document).on('click', '#post_dtls .see_post h3.title', function () {
       $(this).toggleClass("open")
       $("#post_dtls .toggle_slider").slideToggle();
       $('#post_dtls .post_slider ul').slick('unslick');
       $('#post_dtls .post_slider ul').slick(options);
-    });
+    });*/
 
 
     // $("#post_dtls .see_post h3.title").on('click','h3',function() {
@@ -311,13 +313,13 @@ export function custom() {
 
     /*======= Post Banner Slider  Jquery Start ========*/
 
-    $('#post_dtls.thespread .image_block.sliders ul').slick({
+    /*$('#post_dtls.thespread .image_block.sliders ul').slick({
       dots: true,
       infinite: true,
       speed: 300,
       slidesToShow: 1,
       adaptiveHeight: true
-    });
+    });*/
 
     /*======= Post Banner Slider toggle Jquery End ========*/
 

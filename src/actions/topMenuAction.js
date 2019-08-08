@@ -44,14 +44,15 @@ export const getPost = () => {
 export const getACF = () => {
   return (dispatch) => {
     
-    axios.get(siteurl + TPW.ACF_API, {
-    headers: { 'Content-Type': 'application/json' } })
-    .then(response => {
-      console.log(response.data)
-      dispatch({
-        type: 'SET_ACF_DATA',
-        acfData: response.data
-      })
-    });
+  axios.get(siteurl + TPW.ACF_API, {
+    headers: { 'Content-Type': 'application/json' } 
+  })
+  .then(response => {
+    console.log(response.data)
+    dispatch({
+      type: 'SET_ACF_DATA',
+      acfData: response.data
+    })
+  });
   }
 }

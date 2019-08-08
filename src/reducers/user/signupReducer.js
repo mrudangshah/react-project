@@ -1,6 +1,6 @@
 import isEmpty from 'lodash/isEmpty';
 
-let newUser = JSON.parse(localStorage.getItem('new_user'));
+let newUser = (typeof window !== 'undefined') ? JSON.parse(localStorage.getItem('new_user')) : null;
 
 const initialState = {
   isRegistered: false,

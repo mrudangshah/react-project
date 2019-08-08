@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import { Link, Redirect } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { tpwConfig } from "../config";
 import TopMenu from "./parts/TopMenu";
 import Search from "./searchComponent/searchForm";
@@ -34,7 +34,7 @@ class Header extends Component {
 
     const that = this;
     
-    this.setState({
+    that.setState({
       username: this.props.route.match.params.username
     })
   }
@@ -45,8 +45,6 @@ class Header extends Component {
     let logoURL = pageLoading === false ? typeof page.acf.sitelogo != 'undefined' &&  !isEmpty(page.acf.sitelogo.url) 
                   ? page.acf.sitelogo.url : '' : '';
     let pathName = window.location.pathname.split("/")[3];
-
-    //console.log(location.host);
 
     return (
       <header id="header">
@@ -187,15 +185,18 @@ class Header extends Component {
                   </div>
                 </div>
               </div>
-              
-              {!isEmpty(logoURL) ? 
+              { !isEmpty(logoURL) ? 
+              this.props.route.match.path !== '/' ?
                 <div className="logo">
-                  {" "}
                   <Link to="" className="" title="ThePannerWire">
                     <img src={logoURL} alt="ThePannerWire" />
-                  </Link>{" "}
+                  </Link>
                 </div>
-              : ''}
+              : <div className="logo">
+                  <img src={logoURL} alt="ThePannerWire" />
+                </div>
+              : '' 
+              }
 
               <div id="mobile-menu-toggle">
                 {" "}
