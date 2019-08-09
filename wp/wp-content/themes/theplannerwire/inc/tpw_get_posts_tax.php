@@ -135,7 +135,6 @@ function tpw_build_custom_tax_endpoint() {
                   $tpw_tax_post->save_post_status = $post_status === 'True'? true: false;
 
                   /* check post id is save by user or not end  */
-                  
                   $categories = get_the_category();
                   $tpw_category_icons = [];
                   if( !empty($categories) ){
@@ -161,6 +160,20 @@ function tpw_build_custom_tax_endpoint() {
                     $tpw_tax_post->terms = array();
                   }
 
+                  /* Get date times from Event Espresso table */
+                  if(get_the_terms(get_the_ID(),'espresso_event_categories')) {
+                    $datetimeTable = $wpdb->prefix.'esp_datetime';
+                    $datetimeRecords = $wpdb->get_results( $wpdb->prepare(
+                      "SELECT * FROM $datetimeTable WHERE EVT_ID = %d", $tpw_tax_post->id
+                    ) );
+                    if( !empty($datetimeRecords) ){
+                      $records = array();
+                      foreach ($datetimeRecords as $key => $datetimeRecord) {
+                        $records = $datetimeRecord;
+                      }
+                      $tpw_tax_post->event_datetime = $records;
+                    }
+                  }
 
                   /*
                    *

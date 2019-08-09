@@ -199,7 +199,7 @@ class MeprRulesHelper
     ?>
     <span id="<?php echo $field_name; ?>-wrap">
       <?php self::get_page_title($type, $content); ?>
-      <input type="text" id="rule-content-text" class="mepr-rule-types-autocomplete" value="<?php echo $obj->label; ?>" placeholder="<?php _e('Begin Typing Title', 'memberpress'); ?>" />
+      <input type="text" id="rule-content-text" class="mepr-rule-types-autocomplete" value="<?php echo esc_attr($obj->label); ?>" placeholder="<?php _e('Begin Typing Title', 'memberpress'); ?>" />
       <input type="hidden" name="<?php echo $field_name; ?>" id="<?php echo $field_name; ?>" class="mepr-rule-types-autocomplete" value="<?php echo $obj->id; ?>" />
       <span id="rule-content-info"><?php echo $obj->desc; ?></span>
     </span>

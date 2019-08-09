@@ -206,7 +206,12 @@ class NewsletterStatistics extends NewsletterModule {
         $href = trim(str_replace('&amp;', '&', $matches[2]));
 
         // Do not replace the tracking or subscription/unsubscription links.
-        if (strpos($href, '/newsletter/') !== false) {
+        //if (strpos($href, '/newsletter/') !== false) {
+        //    return $matches[0];
+        //}
+        
+        // Do not replace URL which are tags (special case for ElasticEmail)
+        if (strpos($href, '{') === 0) {
             return $matches[0];
         }
 

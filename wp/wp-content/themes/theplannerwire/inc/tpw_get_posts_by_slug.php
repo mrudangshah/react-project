@@ -85,6 +85,22 @@ function tpw_get_posts_by_slug( WP_REST_Request $request ) {
       $tpw_post->tag_ids = $bre_tag_ids;
       $tpw_post->tag_names = $bre_tags;
 
+      /* Get date times from Event Espresso table */
+      if(get_the_terms(get_the_ID(),'espresso_event_categories')) {
+        $datetimeTable = $wpdb->prefix.'esp_datetime';
+        $datetimeRecords = $wpdb->get_results( $wpdb->prepare(
+          "SELECT * FROM $datetimeTable WHERE EVT_ID = %d", $tpw_post->id
+        ) );
+        //echo "<pre>"; print_r($datetimeRecords); echo "</pre>";
+        // if( !empty($datetimeRecords) ){
+        //   $records = array();
+        //   foreach ($datetimeRecords as $key => $datetimeRecord) {
+        //     $records = $datetimeRecord;
+        //   }
+        //   $tpw_post->datetime = $records;
+        // }
+      }
+
       /*
        *
        * return acf fields if they exist

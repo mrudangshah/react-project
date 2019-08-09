@@ -483,7 +483,6 @@ class NewsletterSubscription extends NewsletterModule {
         $this->add_admin_page('profile', 'Subscription Form');
         $this->add_admin_page('forms', 'Forms');
         $this->add_admin_page('lists', 'Lists');
-        $this->add_admin_page('lists-edit', 'List edit');
         $this->add_admin_page('template', 'Template');
     }
 

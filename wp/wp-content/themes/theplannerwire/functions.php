@@ -25,6 +25,8 @@ include_once 'inc/tpw_save_user.php';
 include_once 'inc/tpw_save_user_other_info.php';
 include_once 'inc/tpw_get_all_menu.php';
 include_once 'inc/tpw_get_home_content.php';
+include_once 'inc/tpw_get_events_posts_by_slug.php';
+include_once 'inc/tpw_get_events_related_posts.php';
 
 if ( ! function_exists( 'theplannerwire_setup' ) ) :
 	/**
@@ -152,6 +154,13 @@ function theplannerwire_scripts() {
 }
 add_action( 'wp_enqueue_scripts', 'theplannerwire_scripts' );
 
+if(!current_user_can('administrator')){
+	function admin_style() {
+		wp_enqueue_style('admin-styles', get_template_directory_uri().'/layouts/admin.css');
+	}
+	add_action('admin_enqueue_scripts', 'admin_style');
+}
+
 /**
  * Implement the Custom Header feature.
  */
@@ -251,6 +260,11 @@ function show_extra_profile_fields( $user ) {?>
 	<table class="form-table personal_info">
 
 		<h3 class="heading">Personal Information</h3>
+
+		<tr>
+			<th><label for="account_username"><?php esc_html_e( 'Account Username' ); ?></label></th>
+			<td><input type="text" name="account_username" value="<?php echo esc_html( get_the_author_meta( 'account_username', $user->ID ) ); ?>"></td>
+		</tr>
 
 		<tr>
 			<th><label for="phone"><?php esc_html_e( 'Phone' ); ?></label></th>
@@ -367,9 +381,27 @@ function show_extra_profile_fields( $user ) {?>
 
 	<?php
 }
+
+add_action( 'user_profile_update_errors', 'validate_extra' );
+function validate_extra(&$errors, $update = null, &$user  = null) {
+	
+	$account_username = $_POST["account_username"];
+	if ( empty($account_username) ) {
+		$errors->add('empty_account_username', "<strong>ERROR</strong>: Please enter a valid username.");
+	}
+	else if( !ctype_alnum($account_username) ) {
+		$errors->add('alnum_account_username', "<strong>ERROR</strong>: Only Alpha Numeric characters without any spaces.");
+	}
+}
+
+
 function update_profile_fields( $user_id ) {
 	if ( ! current_user_can( 'edit_user', $user_id ) ) {
 		return false;
+	}
+	
+	if ( !empty( $_POST["account_username"] ) ) {
+		update_user_meta( $user_id, 'account_username',  $_POST['account_username'] );
 	}
 
 	if ( ! empty( $_POST['phone'] ) ) {
@@ -458,6 +490,12 @@ function update_profile_fields( $user_id ) {
 
 }
 
+
+// function check_fields($errors, $update, $user) {
+// 	$errors->add('demo_error',__('This is a demo error, and will halt profile save'));
+// }
+// add_action('user_profile_update_errors', 'check_fields', 10, 3);
+
 //add_filter('login_errors','login_error_message');
 
 function login_error_message($error){
@@ -518,27 +556,16 @@ function add_subscribers_to_dropdown( $query_args, $r ) {
  
 }
 
-/* restric user role for Sponsored category */
-add_filter('list_terms_exclusions', 'sponsored_term_exclusions', 10, 2);
-function sponsored_term_exclusions( $exclusions, $args ) {
-	
-	$user_meta = get_userdata($user_id);
-	$user_roles = $user_meta->roles;
-	global $pagenow;
-	if (in_array($pagenow,array('post.php','post-new.php')) && !current_user_can('administrator')) {
-			$exclusions = " {$exclusions} AND t.slug NOT IN ('sponsored')";
-	}
-	return $exclusions;
-}
+add_filter( 'register_post_type_args', 'my_post_type_args', 10, 2 );
+function my_post_type_args( $args, $post_type ) {
 
-add_filter('list_terms_exclusions', 'uncategorised_term_exclusions', 10, 2);
-function uncategorised_term_exclusions( $exclusions, $args ) {
-	
-	$user_meta = get_userdata($user_id);
-	$user_roles = $user_meta->roles;
-	global $pagenow;
-	if (in_array($pagenow,array('post.php','post-new.php'))) {
-			$exclusions = " {$exclusions} AND t.slug NOT IN ('uncategorized')";
+	if ( 'espresso_events' === $post_type ) {
+		$args['show_in_rest'] = true;
+
+		// Optionally customize the rest_base or rest_controller_class
+		// $args['rest_base']             = 'books';
+		// $args['rest_controller_class'] = 'WP_REST_Posts_Controller';
 	}
-	return $exclusions;
+
+	return $args;
 }

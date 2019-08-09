@@ -10,6 +10,7 @@ function MPPlaceholder({
 }) {
   return (
     <Placeholder
+    className="mp-placeholder"
       icon={icon}
       label={
         <div>

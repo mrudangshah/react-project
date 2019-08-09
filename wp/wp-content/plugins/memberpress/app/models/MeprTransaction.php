@@ -1020,12 +1020,20 @@ class MeprTransaction extends MeprBaseMetaModel implements MeprProductInterface,
   }
 
   /***** MAGIC METHOD HANDLERS *****/
-  protected function mgm_subtotal($mgm, $val = '') {
+
+  // Currently only used in mepr-ecommerce-tracking shortcodes
+  protected function mgm_tracking_subtotal($mgm, $val = '') {
     switch($mgm) {
       case 'get':
         if($this->rec->txn_type == MeprTransaction::$subscription_confirmation_str) {
           $sub = new MeprSubscription($this->rec->subscription_id);
-          return $sub->price;
+
+          if($sub->trial) {
+            return $sub->trial_amount;
+          }
+          else {
+            return $sub->price;
+          }
         }
         else {
           return $this->rec->amount;
@@ -1033,15 +1041,56 @@ class MeprTransaction extends MeprBaseMetaModel implements MeprProductInterface,
     }
   }
 
-  protected function mgm_net_amount($mgm, $val = '') {
+  // Currently only used in mepr-ecommerce-tracking shortcodes
+  protected function mgm_tracking_total($mgm, $val = '') {
     switch($mgm) {
       case 'get':
         if($this->rec->txn_type == MeprTransaction::$subscription_confirmation_str) {
           $sub = new MeprSubscription($this->rec->subscription_id);
-          return $sub->price + $this->rec->tax_amount;
+
+          if($sub->trial) {
+            return $sub->trial_amount; // May need to change this to $sub->trial_amount + $sub->trial_tax_amount after tax on trials is fixed
+          }
+          else {
+            return $sub->total;
+          }
         }
         else {
           return $this->rec->total;
+        }
+    }
+  }
+
+  // Currently only used in mepr-ecommerce-tracking shortcodes
+  protected function mgm_tracking_tax_amount($mgm, $val = '') {
+    switch($mgm) {
+      case 'get':
+        if($this->rec->txn_type == MeprTransaction::$subscription_confirmation_str) {
+          $sub = new MeprSubscription($this->rec->subscription_id);
+
+          // if($sub->trial) {
+            // return $sub->trial_tax_amount; // TODO after taxes in trial periods is fixed
+          // }
+          // else {
+            return $sub->tax_amount;
+          // }
+        }
+        else {
+          return $this->tax_amount;
+        }
+    }
+  }
+
+  // Currently only used in mepr-ecommerce-tracking shortcodes
+  protected function mgm_tracking_tax_rate($mgm, $val = '') {
+    switch($mgm) {
+      case 'get':
+        if($this->rec->txn_type == MeprTransaction::$subscription_confirmation_str) {
+          $sub = new MeprSubscription($this->rec->subscription_id);
+          return $sub->tax_rate;
+        }
+        else {
+          return $this->tax_rate;
         }
     }
   }

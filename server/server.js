@@ -2,9 +2,11 @@ var path = require('path');
 import fs from 'fs';
 
 import React from 'react';
-import window from 'global';
 import express from 'express';
 import ReactDOMServer from 'react-dom/server';
+import { createStore } from 'redux'
+import { Provider } from 'react-redux';
+import tpwStore from './../src/store';
 
 import App from '../src/App';
 
@@ -13,9 +15,15 @@ const app = express();
 
 app.use(express.static('./build'));
 
+
+// Create a new Redux store instance
+const store = createStore(tpwStore)
+
 app.get('/*', (req, res) => {
   const app = ReactDOMServer.renderToString(
-    <App />
+    <Provider store={store}>
+      <App />
+    </Provider>
   );
 
   const indexFile = path.resolve('./build/index.html');

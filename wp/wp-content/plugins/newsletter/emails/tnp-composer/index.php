@@ -140,5 +140,6 @@ $block_options = get_option('newsletter_main');
 
 <?php include NEWSLETTER_DIR . '/emails/subjects.php'; ?>
 
-<script xsrc="<?php echo plugins_url('newsletter') ?>/vendor/tinymce/tinymce.min.js"></script>
-<?php wp_enqueue_editor(); ?>
+<!--<script src="<?php echo plugins_url('newsletter') ?>/vendor/tinymce/tinymce.min.js"></script>-->
+
+<?php if (function_exists('wp_enqueue_editor')) wp_enqueue_editor(); ?>

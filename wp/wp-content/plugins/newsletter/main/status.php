@@ -1,7 +1,5 @@
 <?php
-if (!defined('ABSPATH'))
-    exit;
-
+defined('ABSPATH') || exit;
 
 @include_once NEWSLETTER_INCLUDES_DIR . '/controls.php';
 $module = Newsletter::instance();
@@ -45,6 +43,20 @@ if ($controls->is_action('reschedule')) {
 }
 
 if ($controls->is_action('trigger')) {
+    Newsletter::instance()->hook_newsletter();
+    $controls->messages = 'Triggered';
+}
+
+if ($controls->is_action('conversion')) {
+    $this->logger->info('Maybe convert to utf8mb4');
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    if (function_exists('maybe_convert_table_to_utf8mb4')) {
+        maybe_convert_table_to_utf8mb4(NEWSLETTER_EMAILS_TABLE);
+        maybe_convert_table_to_utf8mb4(NEWSLETTER_USERS_TABLE);
+        $controls->messages = 'Done.';
+    } else {
+        $controls->errors = 'Table conversion function not available';
+    }
     Newsletter::instance()->hook_newsletter();
     $controls->messages = 'Triggered';
 }
@@ -423,7 +435,7 @@ $speed = Newsletter::$instance->options['scheduler_max'];
                     <tr>
                         <td>Database Charset</td>
                         <td>
-                            <?php if (DB_CHARSET != 'utf8' && DB_CHARSET != 'utf8mb4') { ?>
+                            <?php if ($wpdb->charset != 'utf8mb4') { ?>
                                 <span class="tnp-ko">KO</span>
                             <?php } else { ?>
                                 <span class="tnp-ok">OK</span>
@@ -431,14 +443,15 @@ $speed = Newsletter::$instance->options['scheduler_max'];
 
                         </td>
                         <td>
-                            Charset: <?php echo DB_CHARSET; ?>
+                            Charset: <?php echo $wpdb->charset; ?>
                             <br>
-                            <?php if (DB_CHARSET != 'utf8' && DB_CHARSET != 'utf8mb4') { ?>
-                                The recommended charset for your database is <code>utf8</code> or <code>utf8mb4</code>
-                                but the <a href="https://codex.wordpress.org/Converting_Database_Character_Sets" target="_blank">conversion</a>
-                                could be tricky. If you're not experiencing problem, leave things as is.
+                            <?php if ($wpdb->charset != 'utf8mb4') { ?>
+                                The recommended charset for your database is <code>utf8mb4</code> to avoid possible saving errors when you use emoji. 
+                                Read the WordPress Codex <a href="https://codex.wordpress.org/Converting_Database_Character_Sets" target="_blank">conversion 
+                                    instructions</a> (skilled technicia required).
                             <?php } else { ?>
-
+                                    If you experience newsletter saving database error
+                                    <?php $controls->button('conversion', 'Try tables upgrade')?>
                             <?php } ?>
                         </td>
                     </tr>

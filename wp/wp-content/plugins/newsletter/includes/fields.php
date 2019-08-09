@@ -106,6 +106,8 @@ class NewsletterFields {
     }
 
     public function wp_editor($name, $label = '', $attrs = array()) {
+        global $wp_version;
+
         $attrs = $this->_merge_attrs($attrs);
         $this->_open();
         $this->_label($label);
@@ -113,11 +115,17 @@ class NewsletterFields {
         if (is_array($value)) {
             $value = implode("\n", $value);
         }
+        if (version_compare($wp_version, '4.8', '<')) {
+            echo '<p><strong>Rich editor available only with WP 4.8+</strong></p>';
+        } 
         echo '<textarea id="options-' . esc_attr($name) . '" name="options[' . esc_attr($name) . ']" style="width: 100%;height:250px">';
         echo esc_html($value);
         echo '</textarea>';
-        echo '<script>wp.editor.remove("options-', $name, '");';
-        echo 'wp.editor.initialize("options-', $name, '", { tinymce: {toolbar1: "undo redo | formatselect fontselect fontsizeselect | bold italic forecolor backcolor | link unlink | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help", fontsize_formats: "11px 12px 14px 16px 18px 24px 36px 48px", plugins: "link textcolor colorpicker", default_link_target: "_blank", relative_urls : false, convert_urls: false}});</script>';
+
+        if (version_compare($wp_version, '4.8', '>=')) {
+            echo '<script>wp.editor.remove("options-', $name, '");';
+            echo 'wp.editor.initialize("options-', $name, '", { tinymce: {toolbar1: "undo redo | formatselect fontselect fontsizeselect | bold italic forecolor backcolor | link unlink | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help", fontsize_formats: "11px 12px 14px 16px 18px 24px 36px 48px", plugins: "link textcolor colorpicker", default_link_target: "_blank", relative_urls : false, convert_urls: false}});</script>';
+        }
         $this->_description($attrs);
         $this->_close();
     }
@@ -268,7 +276,7 @@ class NewsletterFields {
 
         $this->select($name, $label, $options);
     }
-    
+
     function lists($name, $label, $attrs = array()) {
         $attrs = $this->_merge_attrs($attrs);
         $this->_open();

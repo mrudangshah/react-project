@@ -153,9 +153,9 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
       $usr->store();
     }
 
-    $args = array( 'x_card_num'    => $_POST['mepr_cc_num'],
-                   'x_card_code'   => $_POST['mepr_cvv_code'],
-                   'x_exp_date'    => sprintf('%02d',$_POST['mepr_cc_exp_month']).'-'.$_POST['mepr_cc_exp_year'],
+    $args = array( 'x_card_num'    => sanitize_text_field($_POST['mepr_cc_num']),
+                   'x_card_code'   => sanitize_text_field($_POST['mepr_cvv_code']),
+                   'x_exp_date'    => sprintf('%02d', sanitize_text_field($_POST['mepr_cc_exp_month'])) . '-' . sanitize_text_field($_POST['mepr_cc_exp_year']),
                    'x_amount'      => MeprUtils::format_float($txn->total),
                    'x_description' => $prd->post_title,
                    'x_invoice_num' => $invoice,
@@ -188,8 +188,8 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
     $txn->trans_num = $res['transaction_id'];
     $txn->store();
 
-    $_POST['x_trans_id'] = $res['transaction_id'];
-    $_POST['response'] = $res;
+    $_POST['x_trans_id']  = $res['transaction_id'];
+    $_POST['response']    = $res;
 
     return $this->record_payment();
   }
@@ -201,8 +201,8 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
     */
   public function record_subscription_payment() {
     // Make sure there's a valid subscription for this request and this payment hasn't already been recorded
-    if( !($sub = MeprSubscription::get_one_by_subscr_id($_POST['x_subscription_id'])) or
-        MeprTransaction::get_one_by_trans_num($_POST['x_trans_id']) ) {
+    if( !($sub = MeprSubscription::get_one_by_subscr_id(sanitize_text_field($_POST['x_subscription_id']))) or
+        MeprTransaction::get_one_by_trans_num(sanitize_text_field($_POST['x_trans_id'])) ) {
       return false;
     }
 
@@ -215,22 +215,22 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
     }
 
     $txn = new MeprTransaction();
-    $txn->user_id = $sub->user_id;
-    $txn->product_id = $sub->product_id;
-    $txn->txn_type = MeprTransaction::$payment_str;
-    $txn->status = MeprTransaction::$complete_str;
-    $txn->coupon_id = $coupon_id;
-    $txn->trans_num = $_POST['x_trans_id'];
+    $txn->user_id         = $sub->user_id;
+    $txn->product_id      = $sub->product_id;
+    $txn->txn_type        = MeprTransaction::$payment_str;
+    $txn->status          = MeprTransaction::$complete_str;
+    $txn->coupon_id       = $coupon_id;
+    $txn->trans_num       = sanitize_text_field($_POST['x_trans_id']);
     $txn->subscription_id = $sub->id;
-    $txn->gateway = $this->id;
+    $txn->gateway         = $this->id;
 
-    $txn->set_gross( $_POST['x_amount'] );
+    $txn->set_gross( sanitize_text_field($_POST['x_amount']) );
 
     $txn->store();
 
     $sub->status = MeprSubscription::$active_str;
-    $sub->cc_last4 = substr($_POST['x_account_number'],-4); // Don't get the XXXX part of the string
-    //$sub->txn_count = $_POST['x_subscription_paynum'];
+    $sub->cc_last4 = substr(sanitize_text_field($_POST['x_account_number']), -4); // Don't get the XXXX part of the string
+    //$sub->txn_count = sanitize_text_field($_POST['x_subscription_paynum']);
     $sub->gateway = $this->id;
     $sub->store();
 
@@ -249,7 +249,7 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
   /** Used to record a declined payment. */
   public function record_payment_failure() {
     if(isset($_POST['x_trans_id']) and !empty($_POST['x_trans_id'])) {
-      $txn_res = MeprTransaction::get_one_by_trans_num($_POST['x_trans_id']);
+      $txn_res = MeprTransaction::get_one_by_trans_num(sanitize_text_field($_POST['x_trans_id']));
 
       if(is_object($txn_res) and isset($txn_res->id)) {
         $txn = new MeprTransaction($txn_res->id);
@@ -257,7 +257,7 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
         $txn->store();
       }
       else if( isset($_POST['x_subscription_id']) and
-               $sub = MeprSubscription::get_one_by_subscr_id($_POST['x_subscription_id']) ) {
+               $sub = MeprSubscription::get_one_by_subscr_id(sanitize_text_field($_POST['x_subscription_id'])) ) {
         $first_txn = $sub->first_txn();
         if($first_txn == false || !($first_txn instanceof MeprTransaction)) {
           $coupon_id = $sub->coupon_id;
@@ -267,16 +267,16 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
         }
 
         $txn = new MeprTransaction();
-        $txn->user_id = $sub->user_id;
-        $txn->product_id = $sub->product_id;
-        $txn->coupon_id = $coupon_id;
-        $txn->txn_type = MeprTransaction::$payment_str;
-        $txn->status = MeprTransaction::$failed_str;
+        $txn->user_id         = $sub->user_id;
+        $txn->product_id      = $sub->product_id;
+        $txn->coupon_id       = $coupon_id;
+        $txn->txn_type        = MeprTransaction::$payment_str;
+        $txn->status          = MeprTransaction::$failed_str;
         $txn->subscription_id = $sub->id;
-        $txn->trans_num = $_POST['x_trans_id'];
-        $txn->gateway = $this->id;
+        $txn->trans_num       = sanitize_text_field($_POST['x_trans_id']);
+        $txn->gateway         = $this->id;
 
-        $txn->set_gross( $_POST['x_amount'] );
+        $txn->set_gross( sanitize_text_field($_POST['x_amount']) );
 
         $txn->store();
 
@@ -304,7 +304,7 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
   public function record_payment()
   {
     if(isset($_POST['x_trans_id']) and !empty($_POST['x_trans_id'])) {
-      $obj = MeprTransaction::get_one_by_trans_num($_POST['x_trans_id']);
+      $obj = MeprTransaction::get_one_by_trans_num(sanitize_text_field($_POST['x_trans_id']));
 
       if(is_object($obj) and isset($obj->id)) {
         $txn = new MeprTransaction();
@@ -358,12 +358,12 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
       // This is all we've got to reference the old sale in a credit
       if(!isset($_POST['x_invoice_num'])) { return false; }
 
-      preg_match('#^(\d+)-#',$_POST['x_invoice_num'],$m);
+      preg_match('#^(\d+)-#',sanitize_text_field($_POST['x_invoice_num']),$m);
       $txn_id = $m[1];
       $txn_res = MeprTransaction::get_one($txn_id);
     }
     else if(strtoupper($_REQUEST['x_type']) == 'VOID')
-      $txn_res = MeprTransaction::get_one_by_trans_num($_POST['x_trans_id']);
+      $txn_res = MeprTransaction::get_one_by_trans_num(sanitize_text_field($_POST['x_trans_id']));
 
     if(!isset($txn_res) or empty($txn_res)) { return false; }
 
@@ -372,10 +372,10 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
     // Seriously ... if txn was already refunded what are we doing here?
     if($txn->status == MeprTransaction::$refunded_str) { return $txn->id; }
 
-    $returned_amount = MeprUtils::format_float($_POST['x_amount']);
+    $returned_amount = MeprUtils::format_float(sanitize_text_field($_POST['x_amount']));
     $current_amount = MeprUtils::format_float($txn->total);
 
-    if(strtoupper($_POST['x_type']) == 'CREDIT' and $returned_amount < $current_amount ) {
+    if(strtoupper(sanitize_text_field($_POST['x_type'])) == 'CREDIT' and $returned_amount < $current_amount ) {
       $txn->set_gross( $amount );
       $txn->status = MeprTransaction::$complete_str;
     }
@@ -430,9 +430,9 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
 
     $invoice = $this->create_new_order_invoice($sub);
 
-    $args = array('x_card_num'       => $_POST['mepr_cc_num'],
-                  'x_card_code'      => $_POST['mepr_cvv_code'],
-                  'x_exp_date'       => sprintf('%02d',$_POST['mepr_cc_exp_month']).'-'.$_POST['mepr_cc_exp_year'],
+    $args = array('x_card_num'       => sanitize_text_field($_POST['mepr_cc_num']),
+                  'x_card_code'      => sanitize_text_field($_POST['mepr_cvv_code']),
+                  'x_exp_date'       => sprintf('%02d', sanitize_text_field($_POST['mepr_cc_exp_month'])) . '-' . sanitize_text_field($_POST['mepr_cc_exp_year']),
                   'x_amount'         => MeprUtils::format_float(MeprHooks::apply_filters('mepr_authorize_auth_only_amount', 1.00, $txn, $sub)),
                   'x_description'    => $prd->post_title,
                   'x_invoice_num'    => $invoice,
@@ -486,8 +486,8 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
     $invoice = $this->create_new_order_invoice($sub);
 
     if( empty($usr->first_name) or empty($usr->last_name) ) {
-      $usr->first_name = sanitize_text_field(wp_unslash($_POST['mepr_first_name']));
-      $usr->last_name = sanitize_text_field(wp_unslash($_POST['mepr_last_name']));
+      $usr->first_name  = sanitize_text_field(wp_unslash($_POST['mepr_first_name']));
+      $usr->last_name   = sanitize_text_field(wp_unslash($_POST['mepr_last_name']));
       $usr->store();
     }
 
@@ -507,9 +507,9 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
                      "amount" => MeprUtils::format_float($sub->total), //Use $sub->total here because $txn->amount may be a trial price
                      "payment" => array(
                        "creditCard" => array(
-                         "cardNumber" => $_POST['mepr_cc_num'],
-                         "expirationDate" => $_POST['mepr_cc_exp_month'].'-'.$_POST['mepr_cc_exp_year'],
-                         "cardCode" => $_POST['mepr_cvv_code']
+                         "cardNumber" => sanitize_text_field($_POST['mepr_cc_num']),
+                         "expirationDate" => sanitize_text_field($_POST['mepr_cc_exp_month']) . '-' . sanitize_text_field($_POST['mepr_cc_exp_year']),
+                         "cardCode" => sanitize_text_field($_POST['mepr_cvv_code'])
                        )
                      ),
                      "order" => array(
@@ -527,14 +527,14 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
       $args['subscription']['billTo'] =
         array_merge($args['subscription']['billTo'],
                     array("address" => str_replace('&', '&amp;', get_user_meta($usr->ID, 'mepr-address-one', true)),
-                          "city" => get_user_meta($usr->ID, 'mepr-address-city', true),
-                          "state" => get_user_meta($usr->ID, 'mepr-address-state', true),
-                          "zip" => get_user_meta($usr->ID, 'mepr-address-zip', true),
+                          "city"    => get_user_meta($usr->ID, 'mepr-address-city', true),
+                          "state"   => get_user_meta($usr->ID, 'mepr-address-state', true),
+                          "zip"     => get_user_meta($usr->ID, 'mepr-address-zip', true),
                           "country" => get_user_meta($usr->ID, 'mepr-address-country', true)));
     }
 
     //If customer provided a new ZIP code let's add it here
-    if(isset($_POST['mepr_zip_post_code']) /* && !empty($_POST['mepr_zip_post_code']) */) {
+    if(isset($_POST['mepr_zip_post_code'])) {
       $args['subscription']['billTo']['zip'] = sanitize_text_field(wp_unslash($_POST['mepr_zip_post_code']));
     }
 
@@ -542,7 +542,7 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
 
     $res = $this->send_arb_request('ARBCreateSubscriptionRequest', $args);
 
-    $_POST['txn_id'] = $txn->id;
+    $_POST['txn_id']    = $txn->id;
     $_POST['subscr_id'] = $res->subscriptionId;
 
     return $this->record_create_subscription();
@@ -557,14 +557,14 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
     $mepr_options = MeprOptions::fetch();
 
     if(isset($_POST['txn_id']) and is_numeric($_POST['txn_id'])) {
-      $txn = new MeprTransaction($_POST['txn_id']);
-      $sub = $txn->subscription();
-      $sub->subscr_id = $_POST['subscr_id'];
-      $sub->status=MeprSubscription::$active_str;
-      $sub->created_at = gmdate('c');
-      $sub->cc_last4 = substr($_POST['mepr_cc_num'],-4); // Seriously ... only grab the last 4 digits!
-      $sub->cc_exp_month = $_POST['mepr_cc_exp_month'];
-      $sub->cc_exp_year = $_POST['mepr_cc_exp_year'];
+      $txn                = new MeprTransaction((int)$_POST['txn_id']);
+      $sub                = $txn->subscription();
+      $sub->subscr_id     = sanitize_text_field($_POST['subscr_id']);
+      $sub->status        = MeprSubscription::$active_str;
+      $sub->created_at    = gmdate('c');
+      $sub->cc_last4      = substr(sanitize_text_field($_POST['mepr_cc_num']),-4); // Seriously ... only grab the last 4 digits!
+      $sub->cc_exp_month  = sanitize_text_field($_POST['mepr_cc_exp_month']);
+      $sub->cc_exp_year   = sanitize_text_field($_POST['mepr_cc_exp_year']);
       $sub->store();
 
       // This will only work before maybe_cancel_old_sub is run
@@ -580,10 +580,10 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
       if(!$sub->trial || ($sub->trial and $sub->trial_amount <= 0.00)) {
         $day_count = ($sub->trial)?$sub->trial_days:$mepr_options->grace_init_days;
 
-        $txn->expires_at = MeprUtils::ts_to_mysql_date(time() + MeprUtils::days($day_count), 'Y-m-d H:i:s'); // Grace period before txn processes
-        $txn->txn_type = MeprTransaction::$subscription_confirmation_str;
-        $txn->status = MeprTransaction::$confirmed_str;
-        $txn->trans_num = $sub->subscr_id;
+        $txn->expires_at  = MeprUtils::ts_to_mysql_date(time() + MeprUtils::days($day_count), 'Y-m-d H:i:s'); // Grace period before txn processes
+        $txn->txn_type    = MeprTransaction::$subscription_confirmation_str;
+        $txn->status      = MeprTransaction::$confirmed_str;
+        $txn->trans_num   = $sub->subscr_id;
         $txn->set_subtotal(0.00); // This txn is just a confirmation txn ... it shouldn't have a cost
         $txn->store();
       }
@@ -626,9 +626,9 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
                    "subscription" => array(
                      "payment" => array(
                        "creditCard" => array(
-                         "cardNumber" => $_POST['update_cc_num'],
-                         "expirationDate" => $_POST['update_cc_exp_month'].'-'.$_POST['update_cc_exp_year'],
-                         "cardCode" => $_POST['update_cvv_code']
+                         "cardNumber" => sanitize_text_field($_POST['update_cc_num']),
+                         "expirationDate" => sanitize_text_field($_POST['update_cc_exp_month']) . '-' . sanitize_text_field($_POST['update_cc_exp_year']),
+                         "cardCode" => sanitize_text_field($_POST['update_cvv_code'])
                        )
                      ),
                      "billTo" => array(
@@ -678,10 +678,10 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
       $txn->store();
 
       // Bill Catch-Up Payment
-      $_POST['mepr_cc_num'] = $_POST['update_cc_num'];
-      $_POST['mepr_cvv_code'] = $_POST['update_cvv_code'];
-      $_POST['mepr_cc_exp_month'] = $_POST['update_cc_exp_month'];
-      $_POST['mepr_cc_exp_year'] = $_POST['update_cc_exp_year'];
+      $_POST['mepr_cc_num']       = sanitize_text_field($_POST['update_cc_num']);
+      $_POST['mepr_cvv_code']     = sanitize_text_field($_POST['update_cvv_code']);
+      $_POST['mepr_cc_exp_month'] = sanitize_text_field($_POST['update_cc_exp_month']);
+      $_POST['mepr_cc_exp_year']  = sanitize_text_field($_POST['update_cc_exp_year']);
 
       $_REQUEST['silence_expired_cc'] = true;
       $this->process_payment($txn);
@@ -743,7 +743,7 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
     * Silent Posts.
     */
   public function record_cancel_subscription() {
-    $subscr_ID = (isset($_POST['subscr_ID']))?$_POST['subscr_ID']:null;
+    $subscr_ID = (isset($_POST['subscr_ID'])) ? (int)$_POST['subscr_ID'] : null;
     $sub = new MeprSubscription($subscr_ID);
 
     if(!isset($sub->id) || $sub->id <= 0) { return false; }
@@ -843,12 +843,12 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
         <?php if( empty($usr->first_name) or empty($usr->last_name) ): ?>
           <div class="mp-form-row">
             <label><?php _e('First Name', 'memberpress'); ?></label>
-            <input type="text" name="mepr_first_name" class="mepr-form-input" value="<?php echo (isset($_POST['mepr_first_name']))?$_POST['mepr_first_name']:$usr->first_name; ?>" />
+            <input type="text" name="mepr_first_name" class="mepr-form-input" value="<?php echo (isset($_POST['mepr_first_name'])) ? esc_attr($_POST['mepr_first_name']) : $usr->first_name; ?>" />
           </div>
 
           <div class="mp-form-row">
             <label><?php _e('Last Name', 'memberpress'); ?></label>
-            <input type="text" name="mepr_last_name" class="mepr-form-input" value="<?php echo (isset($_POST['mepr_last_name']))?$_POST['mepr_last_name']:$usr->last_name; ?>" />
+            <input type="text" name="mepr_last_name" class="mepr-form-input" value="<?php echo (isset($_POST['mepr_last_name'])) ? esc_attr($_POST['mepr_last_name']) : $usr->last_name; ?>" />
           </div>
         <?php else: ?>
           <div class="mp-form-row">
@@ -907,7 +907,7 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
           <div class="mp-form-label">
             <label><?php _e('ZIP/Post Code', 'memberpress'); ?></label>
           </div>
-          <input type="tel" name="mepr_zip_post_code" class="mepr-form-input" autocomplete="off" value="<?php echo (isset($_POST['mepr_zip_post_code']))?$_POST['mepr_zip_post_code']:''; ?>" required />
+          <input type="text" name="mepr_zip_post_code" class="mepr-form-input" autocomplete="off" value="<?php echo (isset($_POST['mepr_zip_post_code'])) ? esc_attr($_POST['mepr_zip_post_code']) : ''; ?>" required />
         </div>
 
         <div class="mepr_spacer">&nbsp;</div>
@@ -949,7 +949,7 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
     }
 
     // IF SPC is enabled, we need to bail on validation if 100% off forever coupon was used
-    $txn = new MeprTransaction($_POST['mepr_transaction_id']);
+    $txn = new MeprTransaction((int)$_POST['mepr_transaction_id']);
     if($txn->coupon_id) {
       $coupon = new MeprCoupon($txn->coupon_id);
 
@@ -1075,9 +1075,9 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
   public function display_update_account_form($sub_id, $errors=array(), $message='') {
     $sub = new MeprSubscription($sub_id);
 
-    $last4 = isset($_POST['update_cc_num']) ? substr($_POST['update_cc_num'],-4) : $sub->cc_last4;
-    $exp_month = isset($_POST['update_cc_exp_month']) ? $_POST['update_cc_exp_month'] : $sub->cc_exp_month;
-    $exp_year = isset($_POST['update_cc_exp_year']) ? $_POST['update_cc_exp_year'] : $sub->cc_exp_year;
+    $last4 = isset($_POST['update_cc_num']) ? substr(sanitize_text_field($_POST['update_cc_num']), -4) : $sub->cc_last4;
+    $exp_month = isset($_POST['update_cc_exp_month']) ? sanitize_text_field($_POST['update_cc_exp_month']) : $sub->cc_exp_month;
+    $exp_year = isset($_POST['update_cc_exp_year']) ? sanitize_text_field($_POST['update_cc_exp_year']) : $sub->cc_exp_year;
 
     // Only include the full cc number if there are errors
     if(strtolower($_SERVER['REQUEST_METHOD'])=='post' and empty($errors)) {
@@ -1089,10 +1089,10 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
       unset($_POST['update_cvv_code']); // Unset this for security
     }
     else { // If there are errors then show the full cc num ... if it's there
-      $last4 = isset($_POST['update_cc_num']) ? $_POST['update_cc_num'] : $sub->cc_last4;
+      $last4 = isset($_POST['update_cc_num']) ? sanitize_text_field($_POST['update_cc_num']) : $sub->cc_last4;
     }
 
-    $ccv_code = (isset($_POST['update_cvv_code']))?$_POST['update_cvv_code']:'';
+    $ccv_code = (isset($_POST['update_cvv_code'])) ? sanitize_text_field($_POST['update_cvv_code']) : '';
     $exp = sprintf('%02d', $exp_month) . " / {$exp_year}";
 
     ?>
@@ -1157,7 +1157,7 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
             <div class="mp-form-label">
               <label><?php _e('Zip code for Card', 'memberpress'); ?></label>
             </div>
-            <input type="tel" name="update_zip_post_code" class="mepr-form-input" autocomplete="off" value="" required />
+            <input type="text" name="update_zip_post_code" class="mepr-form-input" autocomplete="off" value="" required />
           </div>
         </div>
 

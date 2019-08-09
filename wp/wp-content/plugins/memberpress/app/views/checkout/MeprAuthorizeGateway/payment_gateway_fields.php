@@ -13,7 +13,7 @@
   <div class="mp-form-label">
     <label><?php _e('Zip code for Card', 'memberpress'); ?></label>
   </div>
-  <input type="tel" name="mepr_zip_post_code" class="mepr-form-input" autocomplete="off" value="" required />
+  <input type="text" name="mepr_zip_post_code" class="mepr-form-input" autocomplete="off" value="" required />
 </div>
 
 <?php MeprHooks::do_action('mepr-authorize-net-payment-form', $txn); ?>

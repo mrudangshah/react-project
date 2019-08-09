@@ -26,23 +26,24 @@ class MeprCheckoutCtrl extends MeprBaseCtrl {
     }
 
     $tracking_codes = array(
-      '%%subtotal%%'          => array('MeprTransaction' => 'subtotal'),
-      '%%tax_amount%%'        => array('MeprTransaction' => 'tax_amount'),
-      '%%tax_rate%%'          => array('MeprTransaction' => 'tax_rate'),
-      '%%total%%'             => array('MeprTransaction' => 'net_amount'),
-      '%%txn_num%%'           => array('MeprTransaction' => 'trans_num'),
-      '%%sub_id%%'            => array('MeprTransaction' => 'subscription_id'),
-      '%%txn_id%%'            => array('MeprTransaction' => 'id'),
+      '%%subtotal%%'          => array('MeprTransaction'  => 'tracking_subtotal'),
+      '%%tax_amount%%'        => array('MeprTransaction'  => 'tracking_tax_amount'),
+      '%%tax_rate%%'          => array('MeprTransaction'  => 'tracking_tax_rate'),
+      '%%total%%'             => array('MeprTransaction'  => 'tracking_total'),
+      '%%txn_num%%'           => array('MeprTransaction'  => 'trans_num'),
+      '%%sub_id%%'            => array('MeprTransaction'  => 'subscription_id'),
+      '%%txn_id%%'            => array('MeprTransaction'  => 'id'),
       '%%sub_num%%'           => array('MeprSubscription' => 'subscr_id'),
       '%%membership_amount%%' => array('MeprSubscription' => 'price'),
       '%%trial_days%%'        => array('MeprSubscription' => 'trial_days'),
       '%%trial_amount%%'      => array('MeprSubscription' => 'trial_amount'),
-      '%%username%%'          => array('MeprUser' => 'user_login'),
-      '%%user_email%%'        => array('MeprUser' => 'user_email'),
-      '%%user_id%%'           => array('MeprUser' => 'ID'),
-      '%%membership_name%%'   => array('MeprProduct' => 'post_title'),
-      '%%membership_id%%'     => array('MeprProduct' => 'ID'),
+      '%%username%%'          => array('MeprUser'         => 'user_login'),
+      '%%user_email%%'        => array('MeprUser'         => 'user_email'),
+      '%%user_id%%'           => array('MeprUser'         => 'ID'),
+      '%%membership_name%%'   => array('MeprProduct'      => 'post_title'),
+      '%%membership_id%%'     => array('MeprProduct'      => 'ID'),
     );
+
     foreach($tracking_codes as $code => $mapping) {
       // Make sure the content has a code to replace
       if(strpos($content, $code) !== false) {

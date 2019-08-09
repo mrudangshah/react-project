@@ -177,6 +177,12 @@ function tpw_get_home_content( WP_REST_Request $request ) {
   	while ( $query->have_posts() ) { 
       $query->the_post();
       
+      date_default_timezone_set('UTC');
+      $expiration_date = get_field('expiration_date');
+      $today_date = date('Ymd');
+      
+      if( $expiration_date > $today_date ){
+      
       global $post;
       $sponsored_post = new stdClass();
       
@@ -277,7 +283,9 @@ function tpw_get_home_content( WP_REST_Request $request ) {
           $sponsored_post->media = false;
         }
       }
-
+    } else{
+      $sponsored_post = null;
+    }
 
       // Push the post to the main $post array
       array_push($sponsored_posts, $sponsored_post);
