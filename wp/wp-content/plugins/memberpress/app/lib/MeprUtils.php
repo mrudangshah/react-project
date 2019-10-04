@@ -1332,7 +1332,6 @@ class MeprUtils {
 
   public static function send_new_sub_notices($sub) {
     self::send_notices( $sub, null, 'MeprAdminNewSubEmail' );
-    MeprEvent::record('subscription-created', $sub);
   }
 
   public static function send_transaction_receipt_notices( $txn ) {
@@ -1629,6 +1628,37 @@ class MeprUtils {
     return preg_replace('!(%gatewayid%|%action%)!', '([^/\?]+)', self::gateway_notify_url_structure()) . '/?';
   }
 
+  /** Returns an array to be used with wp_remote_request
+    */
+  public static function jwt_header($jwt, $domain) {
+    return array(
+      'Authorization' => 'Bearer ' . $jwt,
+      'Accept'        => 'application/json;ver=1.0',
+      'Content-Type'  => 'application/json; charset=UTF-8',
+      'Host'          => $domain
+    );
+  }
+
+  /** A more robust way to get a header. */
+  public static function get_http_header($header_name) {
+    $header_name = strtoupper($header_name);
+    $server_header_name = 'HTTP_' . str_replace('-', '_', $header_name);
+
+    if(isset($_SERVER[$server_header_name])) {
+      return $_SERVER[$server_header_name];
+    }
+    elseif(function_exists('getallheaders')) {
+      $myheaders = getallheaders();
+
+      $headers_upper = array_change_key_case($myheaders, CASE_UPPER);
+      if(isset($headers_upper[$header_name])) {
+        return $headers_upper[$header_name];
+      }
+    }
+
+    return false;
+  }
+
 /* PLUGGABLE FUNCTIONS AS TO NOT STEP ON OTHER PLUGINS' CODE */
   public static function get_currentuserinfo() {
     self::include_pluggables('wp_get_current_user');
@@ -1752,6 +1782,10 @@ class MeprUtils {
     }
 
     return $permalink;
+  }
+
+  public static function get_current_url_without_params() {
+    return explode('?', $_SERVER['REQUEST_URI'], 2)[0];
   }
 
   public static function wp_redirect($location, $status = 302) {

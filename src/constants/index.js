@@ -14,6 +14,7 @@ export const TPW = {
   COMMENT_API: '/wp/wp-json/wp/v2/comments?post=',
   MORE_API: '/wp/wp-json/tpw-rest-endpoints/v1/post/related/',
   EXCERPT_LENGTH: 200,
+  LINK_EXCERPT_LENGTH: 40,
   FACEBOOK_LINK: 'https://www.facebook.com',
   INSTAGRAM_LINK: 'https://www.instagram.com',
   ACCOUNT_LAST: '/user/signup/last',

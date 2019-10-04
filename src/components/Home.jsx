@@ -10,8 +10,9 @@ import './../helpers/react-slick.js';
 import Slider from "react-slick";
 import equalheight from 'equalheight' ;
 import { getHomeItems } from './../actions/homeAction';
-import Moment from 'moment';
 import isEmpty from 'lodash/isEmpty';
+import LazyLoad from 'react-lazyload';
+import PlaceholderComponent from '../components/Placeholder';
 
 const siteurl = tpwConfig.API_URL;
 var HtmlToReactParser = require('html-to-react').Parser;
@@ -139,16 +140,19 @@ class Home extends Component {
     return (<section id="blog">
       <div className="inner_blog">
       
-      {Object.keys(homeItems).map(function(type) {
-          return <div key={type}>{
+      {Object.keys(homeItems).map(function(type, index) {
+          return (
+            <LazyLoad key={index} height={2000} >{
             type === 'twoPosts' ? that.getTwoPostContent(homeItems[type]) :
               type === 'sponsoredPosts' ? 
                 (( !isEmpty( homeItems.sponsoredPosts[0] ) ) && that.getSponsorPostContent(homeItems[type]) ) :
                 type === 'onePosts' ? that.getOnePostContent(homeItems[type]) :
                   type === 'communityPosts' ? that.getCommunityPostContent(homeItems[type]) :
-                    type === 'threePosts' ? that.getThreePostContent(homeItems[type]) :
-                      this.noRecord()
-          }</div>;
+                    type === 'eventPost' ? that.getEventContent(homeItems[type]):
+                      type === 'threePosts' ? that.getThreePostContent(homeItems[type]) :
+                        ''
+            }</LazyLoad>
+          );
       })}
 
       </div>
@@ -172,13 +176,12 @@ class Home extends Component {
     return (      
       itemObj.map((item, index) => {
         let boundItemClick = this.savePost.bind(this, item);
-        console.log(index)
         return <div key={index} className="blog_cnt">
             <div className={[index %2 === 0 ? 'col_blog' : 'col_blog float-right']}>
               <div className="inner_col_blog">
               {item.terms[0].slug === 'the-spread' ?
                   item.acf.image_gallery !== false ?
-                  <img className="img_respon" src={item.acf.image_gallery[0].image.url} alt={'blogImage'} />
+                  <Link to={`${item.terms[0].slug}/${item.slug}`}><img className="img_respon" src={item.acf.image_gallery[0].image.url} alt={'blogImage'} /></Link>
                 : item.post_format.length > 0 && item.post_format[0].name  === 'Video' ? 
                   <video controls>
                     <source src={item.acf.video.url} type="video/mp4"></source>
@@ -190,9 +193,9 @@ class Home extends Component {
                 <video controls>
                   <source src={item.acf.video.url} type="video/mp4"></source>
                 </video>
-              : item.post_format === false ?
-              <img className="img_respon" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image:'' } alt={item.acf.single_featured_image.alt} />
-              : '' : ''
+              : item.post_format === false && item.acf !== null ?
+                <Link to={`${item.terms[0].slug}/${item.slug}`}><img className="img_respon" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image:sample_image } alt="" /></Link>
+              : <Link to={`${item.terms[0].slug}/${item.slug}`}><img className="img_respon" src={ sample_image } alt="" /></Link> : <Link to={`${item.terms[0].slug}/${item.slug}`}><img className="img_respon" src={ sample_image } alt="" /></Link>
               }
               </div>
             </div>
@@ -200,12 +203,12 @@ class Home extends Component {
               <div className="inner_col_blog pad_around">
                 <div className="main_blog_dtls">
                   <div className="blog_dtls" style={{ 'borderColor': item.term_color }}>
-                    <div className="blog_dtltitle" style={{ 'color': item.term_color }}><img src={item.term_icon.url} alt={item.term_icon.alt} />{item.terms[0].name}</div>
+                    <div className="blog_dtltitle" style={{ 'color': item.term_color }}><img src={ item.term_icon !==null && item.term_icon.url} alt="" />{item.terms[0].name}</div>
                     { item.post_format.length > 0 && item.post_format[0].name  === 'Video'?
                     <div className="post_type">Video</div>
                     : ''
                     }
-                    <h2>{htmlToReactParser.parse(item.title)}</h2>
+                    <Link to={`${item.terms[0].slug}/${item.slug}`}><h2>{htmlToReactParser.parse(item.title)}</h2></Link>
                     <p>{htmlToReactParser.parse(_.truncate(item.excerpt, {'length': TPW.EXCERPT_LENGTH}))}</p>
                     <div className="blog_author">
                       <div className="imgbox">
@@ -215,6 +218,9 @@ class Home extends Component {
                       <span>{item.author}</span>
                     </div>
                     <div className="readmore">
+                      <Link to={"/member/"+ item.user_login} className="trans" title={item.author}>
+                        <img src={item.author_avatar} className="absoImg_hover" alt="" />
+                      </Link>
                       { item.post_format.length > 0 && item.post_format[0].name  === 'Video'?
                       <Link to={`${item.terms[0].slug}/${item.slug}`} className="trans" title="Watch Now" style={{ 'color': item.term_color }}>Watch Now</Link>
                       : <Link to={`${item.terms[0].slug}/${item.slug}`} className="trans" title="View Post" style={{ 'color': item.term_color }}>View Post</Link>
@@ -224,30 +230,36 @@ class Home extends Component {
                       <ul>
                         <li>
                           <button className="trans save_blog" title="Save" data-id={item.id} onClick={boundItemClick} style={{ 'color': item.term_color }}>
-                          { item.save_post_status === false ? this.state.savedId.includes(item.id) ? <img className="svg" src={ item.term_saved_icon.url } alt="Save" /> : <img className="svg" src={ item.term_save_icon.url } alt="Save" />
-                            : item.save_post_status === true ? <img className="svg" src={ item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon.url } alt="Save" /> }
+                          { item.save_post_status === false ? this.state.savedId.includes(item.id) ? <img className="svg" src={ item.term_saved_icon!==null && item.term_saved_icon.url } alt="Save" /> : <img className="svg" src={ item.term_save_icon !==null && item.term_save_icon.url } alt="Save" />
+                            : item.save_post_status === true ? <img className="svg" src={ item.term_saved_icon !==null && item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon !==null && item.term_save_icon.url } alt="Save" /> }
                           Save
                           </button>
                         </li>
                         <li>
                           <button className="trans" title="Share" style={{ 'color': item.term_color }}>
-                          <img className="svg" src={ item.term_share_icon.url } alt="Share" />Share</button> 
+                          <img className="svg" src={ item.term_share_icon !==null && item.term_share_icon.url } alt="Share" />Share</button> 
                         </li>
+                      </ul>
+                    </div>
+                    <div  className="feedmore_menu" >
+                      <ion-icon name="ios-more" id="feedmore"></ion-icon>
+                      <ul className="feedmore_dropdown">
+                        <li><a href="#!">Edit</a></li>
+                        <li><a href="#!">Delete</a></li>
+                        <li><a href="#!">Report</a></li>
                       </ul>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
           </div>
       })    
     );
   }
 
-
   /**
-   * POST CONTENT
+   * Event POST CONTENT ( 4th Position )
    */
   getOnePostContent = (itemObj) => {
     const {homeItems} = this.props; 
@@ -256,40 +268,21 @@ class Home extends Component {
       itemObj.map((item, index) => {
         let boundItemClick = this.savePost.bind(this, item);
         return <div key={index} className="blog_cnt">
-            
             <div className={ ( !isEmpty(homeItems.sponsoredPosts[0]) ) ? 'col_blog float-right' : 'col_blog'}>
               <div className="inner_col_blog">
-              {item.terms[0].slug === 'the-spread' ?
-                  item.acf.image_gallery !== false ?
-                  <img className="img_respon" src={item.acf ? item.acf.image_gallery ? item.acf.image_gallery[0].image.url : sample_image : ''} alt={'blogImage'} />
-                : item.post_format.length > 0 && item.post_format[0].name  === 'Video' ? 
-                  <video controls>
-                    <source src={item.acf.video.url} type="video/mp4"></source>
-                  </video>
-                : <img className="img_respon" src={sample_image} alt={'blogImage'} /> : ''
-              }
-              { item.terms[0].slug !== 'the-spread' ?
-               item.post_format.length > 0 && item.post_format[0].name  === 'Video' ?
-                <video controls>
-                  <source src={item.acf.video.url} type="video/mp4"></source>
-                </video>
-              : item.post_format === false ?
-              <img className="img_respon" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image:'' } alt={item.acf.single_featured_image.alt} />
-              : '' : ''
-              }
+                <Link to={`${item.terms[0].slug}/${item.slug}`}><img className="img_respon" src={item.media !== false ? item.media.medium : sample_image } alt={item.title} /></Link>
               </div>
             </div>
-            
             <div className={[index %2 === 0 ? 'col_blog' : 'col_blog float-right']}>
               <div className="inner_col_blog pad_around">
                 <div className="main_blog_dtls">
                   <div className="blog_dtls" style={{ 'borderColor': item.term_color }}>
-                    <div className="blog_dtltitle" style={{ 'color': item.term_color }}><img src={item.term_icon.url} alt={item.term_icon.alt} />{item.terms[0].name}</div>
+                    <div className="blog_dtltitle" style={{ 'color': item.term_color }}><img src={ item.term_icon !==null && item.term_icon.url} alt="" />{item.terms[0].name}</div>
                     { item.post_format.length > 0 && item.post_format[0].name  === 'Video'?
                     <div className="post_type">Video</div>
                     : ''
                     }
-                    <h2>{htmlToReactParser.parse(item.title)}</h2>
+                    <Link to={`${item.terms[0].slug}/${item.slug}`}><h2>{htmlToReactParser.parse(item.title)}</h2></Link>
                     <p>{htmlToReactParser.parse(_.truncate(item.excerpt, {'length': TPW.EXCERPT_LENGTH}))}</p>
                     <div className="blog_author">
                       <div className="imgbox">
@@ -299,6 +292,9 @@ class Home extends Component {
                       <span>{item.author}</span>
                     </div>
                     <div className="readmore">
+                      <Link to={"/member/"+ item.user_login} className="trans" title={item.author}>
+                        <img src={item.author_avatar} className="absoImg_hover" alt="" />
+                      </Link>
                       { item.post_format.length > 0 && item.post_format[0].name  === 'Video'?
                       <Link to={`${item.terms[0].slug}/${item.slug}`} className="trans" title="Watch Now" style={{ 'color': item.term_color }}>Watch Now</Link>
                       : <Link to={`${item.terms[0].slug}/${item.slug}`} className="trans" title="View Post" style={{ 'color': item.term_color }}>View Post</Link>
@@ -308,22 +304,101 @@ class Home extends Component {
                       <ul>
                         <li>
                           <button className="trans save_blog" title="Save" data-id={item.id} onClick={boundItemClick} style={{ 'color': item.term_color }}>
-                          { item.save_post_status === false ? this.state.savedId.includes(item.id) ? <img className="svg" src={ item.term_saved_icon.url } alt="Save" /> : <img className="svg" src={ item.term_save_icon.url } alt="Save" />
-                            : item.save_post_status === true ? <img className="svg" src={ item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon.url } alt="Save" /> }
+                          { item.save_post_status === false ? this.state.savedId.includes(item.id) ? <img className="svg" src={ item.term_saved_icon !==null && item.term_saved_icon.url } alt="Save" /> : <img className="svg" src={ item.term_save_icon !==null && item.term_save_icon.url } alt="Save" />
+                            : item.save_post_status === true ? <img className="svg" src={ item.term_saved_icon !==null && item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon !==null && item.term_save_icon.url } alt="Save" /> }
                           Save
                           </button>
                         </li>
                         <li>
                           <button className="trans" title="Share" style={{ 'color': item.term_color }}>
-                          <img className="svg" src={ item.term_share_icon.url } alt="On The Wire" />Share</button> 
+                          <img className="svg" src={ item.term_share_icon !==null && item.term_share_icon.url } alt="On The Wire" />Share</button> 
                         </li>
+                      </ul>
+                    </div>
+                    <div className="feedmore_menu">
+                      <ion-icon name="ios-more" id="feedmore"></ion-icon>
+                      <ul className="feedmore_dropdown">
+                        <li><a href="#!">Edit</a></li>
+                        <li><a href="#!">Delete</a></li>
+                        <li><a href="#!">Report</a></li>
                       </ul>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
+      })    
+    );
+  }
 
+  /**
+   * Event POST CONTENT ( 6th Position )
+   */
+  getEventContent = (itemObj) => {
+    const{homeItems} = this.props;
+    return (      
+      itemObj.map((item, index) => {
+        let boundItemClick = this.savePost.bind(this, item);
+        return <div key={index} className="blog_cnt">
+            <div className={ ( !isEmpty(homeItems.eventPost[0]) ) ? 'col_blog' : 'col_blog float-right'}>
+              <div className="inner_col_blog">
+                <Link to={`${item.terms[0].slug}/${item.slug}`}><img className="img_respon" src={item.media !== false ? item.media.medium : sample_image } alt={item.title} /></Link>
+              </div>
+            </div>
+            <div className={[index %2 === 0 ? 'col_blog float-right' : 'col_blog']}>
+              <div className="inner_col_blog pad_around">
+                <div className="main_blog_dtls">
+                  <div className="blog_dtls" style={{ 'borderColor': item.term_color }}>
+                    <div className="blog_dtltitle" style={{ 'color': item.term_color }}><img src={ item.term_icon !==null && item.term_icon.url} alt="" />{item.terms[0].name}</div>
+                    { item.post_format.length > 0 && item.post_format[0].name  === 'Video' &&
+                      <div className="post_type">Video</div> 
+                    }
+                    <Link to={`${item.terms[0].slug}/${item.slug}`}><h2>{htmlToReactParser.parse(item.title)}</h2></Link>
+                    <p>{htmlToReactParser.parse(_.truncate(item.excerpt, {'length': TPW.EXCERPT_LENGTH}))}</p>
+                    <div className="blog_author">
+                      <div className="imgbox">
+                        <img src={siteurl + IMAGE.trans_50 } alt="" />
+                        <img src={item.author_avatar} className="absoImg" alt=""/>
+                      </div>
+                      <span>{item.author}</span>
+                    </div>
+                    <div className="readmore">
+                      <Link to={"/member/"+ item.user_login} className="trans" title={item.author}>
+                        <img src={item.author_avatar} className="absoImg_hover" alt="" />
+                      </Link>
+                      { item.post_format.length > 0 && item.post_format[0].name  === 'Video'?
+                      <Link to={`${item.terms[0].slug}/${item.slug}`} className="trans" title="Watch Now" style={{ 'color': item.term_color }}>Watch Now</Link>
+                      : <Link to={`${item.terms[0].slug}/${item.slug}`} className="trans" title="View Post" style={{ 'color': item.term_color }}>View Post</Link>
+                      }
+                    </div>
+                    <div className="save_share_btn">
+                      <ul>
+                        <li>
+                          <button className="trans save_blog" title="Save" data-id={item.id} onClick={boundItemClick} style={{ 'color': item.term_color }}>
+                          { item.save_post_status === false ? this.state.savedId.includes(item.id) ? <img className="svg" src={ item.term_saved_icon !==null && item.term_saved_icon.url } alt="Save" /> : <img className="svg" src={ item.term_save_icon !==null && item.term_save_icon.url } alt="Save" />
+                            : item.save_post_status === true ? <img className="svg" src={ item.term_saved_icon !==null && item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon !==null && item.term_save_icon.url } alt="Save" /> }
+                          Save
+                          </button>
+                        </li>
+                        <li>
+                          <button className="trans" title="Share" style={{ 'color': item.term_color }}>
+                          <img className="svg" src={ item.term_share_icon !==null && item.term_share_icon.url } alt="On The Wire" />Share</button> 
+                        </li>
+                      </ul>
+                    </div>
+                    <div className="feedmore_menu">
+                      <ion-icon name="ios-more" id="feedmore"></ion-icon>
+                      <ul className="feedmore_dropdown">
+                        <li><a href="#!">Edit</a></li>
+                        <li><a href="#!">Delete</a></li>
+                        <li><a href="#!">Report</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
       })    
     );
@@ -338,11 +413,11 @@ class Home extends Component {
         let boundItemClick = this.savePost.bind(this, item);
         
         return <div key={index} className="blog_cnt">
-            <div className={[index %2 === 0 ? 'col_blog' : 'col_blog float-right']}>
+            <div className={[index %2 === 0 ? 'col_blog float-right' : 'col_blog ']}>
               <div className="inner_col_blog">
               {item.terms[0].slug === 'the-spread' ?
                   item.acf.image_gallery !== false ?
-                  <img className="img_respon" src={item.acf ? item.acf.image_gallery ? item.acf.image_gallery[0].image.url : sample_image : ''} alt={'blogImage'} />
+                  <Link to={`${item.terms[0].slug}/${item.slug}`}><img className="img_respon" src={item.acf ? item.acf.image_gallery ? item.acf.image_gallery[0].image.url : sample_image : ''} alt='blogImage' /></Link>
                 : item.post_format.length > 0 && item.post_format[0].name  === 'Video' ? 
                   <video controls>
                     <source src={item.acf.video.url} type="video/mp4"></source>
@@ -354,23 +429,22 @@ class Home extends Component {
                 <video controls>
                   <source src={item.acf.video.url} type="video/mp4"></source>
                 </video>
-              : item.post_format === false ?
-              <img className="img_respon" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image:'' } alt={item.acf.single_featured_image.alt} />
-              : '' : ''
+              : item.post_format === false && item.acf !==null ?
+                <Link to={`${item.terms[0].slug}/${item.slug}`}><img className="img_respon" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image:sample_image } alt='blog_image' /></Link>
+              : <Link to={`${item.terms[0].slug}/${item.slug}`}><img className="img_respon" src={ sample_image } alt="" /></Link> : <Link to={`${item.terms[0].slug}/${item.slug}`}><img className="img_respon" src={ sample_image } alt="" /></Link>
               }
               </div>
             </div>
-            
-            <div className={'col_blog'}>
+            <div className='col_blog'>
               <div className="inner_col_blog pad_around">
                 <div className="main_blog_dtls">
                   <div className="blog_dtls" style={{ 'borderColor': item.term_color }}>
-                    <div className="blog_dtltitle" style={{ 'color': item.term_color }}><img src={item.term_icon.url} alt={item.term_icon.alt} />{item.terms[0].name}</div>
+                    <div className="blog_dtltitle" style={{ 'color': item.term_color }}><img src={ item.term_icon !==null && item.term_icon.url} alt={ item.term_icon !=null && item.term_icon.alt} />{item.terms[0].name}</div>
                     { item.post_format.length > 0 && item.post_format[0].name  === 'Video'?
                     <div className="post_type">Video</div>
                     : ''
                     }
-                    <h2>{htmlToReactParser.parse(item.title)}</h2>
+                    <Link to={`${item.terms[0].slug}/${item.slug}`}><h2>{htmlToReactParser.parse(item.title)}</h2></Link>
                     <p>{htmlToReactParser.parse(_.truncate(item.excerpt, {'length': TPW.EXCERPT_LENGTH}))}</p>
                     <div className="blog_author">
                       <div className="imgbox">
@@ -380,6 +454,9 @@ class Home extends Component {
                       <span>{item.author}</span>
                     </div>
                     <div className="readmore">
+                      <Link to={"/member/"+ item.user_login} className="trans" title={item.author}>
+                        <img src={item.author_avatar} className="absoImg_hover" alt="" />
+                      </Link>
                       { item.post_format.length > 0 && item.post_format[0].name  === 'Video'?
                       <Link to={`${item.terms[0].slug}/${item.slug}`} className="trans" title="Watch Now" style={{ 'color': item.term_color }}>Watch Now</Link>
                       : <Link to={`${item.terms[0].slug}/${item.slug}`} className="trans" title="View Post" style={{ 'color': item.term_color }}>View Post</Link>
@@ -389,27 +466,33 @@ class Home extends Component {
                       <ul>
                         <li>
                           <button className="trans save_blog" title="Save" data-id={item.id} onClick={boundItemClick} style={{ 'color': item.term_color }}>
-                          { item.save_post_status === false ? this.state.savedId.includes(item.id) ? <img className="svg" src={ item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon.url } alt="Save" />
-                            : item.save_post_status === true ? <img className="svg" src={ item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon.url } alt="Save" /> }
+                          { item.save_post_status === false ? this.state.savedId.includes(item.id) ? <img className="svg" src={ item.term_saved_icon !==null && item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon !==null && item.term_save_icon.url } alt="Save" />
+                            : item.save_post_status === true ? <img className="svg" src={ item.term_saved_icon !==null && item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon !==null && item.term_save_icon.url } alt="Save" /> }
                           Save
                           </button>
                         </li>
                         <li>
                           <button className="trans" title="Share" style={{ 'color': item.term_color }}>
-                          <img className="svg" src={ item.term_share_icon.url } alt="Share" />Share</button> 
+                          <img className="svg" src={ item.term_share_icon !==null && item.term_share_icon.url } alt="Share" />Share</button> 
                         </li>
+                      </ul>
+                    </div>
+                    <div className="feedmore_menu">
+                      <ion-icon name="ios-more" id="feedmore"></ion-icon>
+                      <ul className="feedmore_dropdown">
+                        <li><a href="#!">Edit</a></li>
+                        <li><a href="#!">Delete</a></li>
+                        <li><a href="#!">Report</a></li>
                       </ul>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
           </div>
       })    
     );
   }
-
 
   /**
    * SPONSER CONTENT
@@ -429,10 +512,10 @@ class Home extends Component {
                   : item.acf.image_or_video.value === 'image' ?
                     
                     item.acf.single_image_or_gallery.value  === 'featured_image' ?
-                    <img className="img_respon" src={item.acf.single_featured_image.url} alt={`Sponsered`} />
+                    <Link to={`${item.terms[0].slug}/${item.slug}`}><img className="img_respon" src={item.acf.single_featured_image.url} alt='Sponsered' /></Link>
 
                     : item.acf.single_image_or_gallery.value  === 'image_gallery' ?
-                    <img className="img_respon" src={item.acf.image_gallery[0].images_repeater.url} alt={`Sponsered`} />
+                      <Link to={`${item.terms[0].slug}/${item.slug}`}><img className="img_respon" src={item.acf.image_gallery[0].images_repeater.url} alt='Sponsered' /></Link>
                   : ''   :''
                 }
               </div>
@@ -446,7 +529,7 @@ class Home extends Component {
                     <div className="post_type">Video</div>
                     : ''
                     }
-                    <h2>{htmlToReactParser.parse(item.title)}</h2>
+                    <Link to={`${item.terms[0].slug}/${item.slug}`}><h2>{htmlToReactParser.parse(item.title)}</h2></Link>
                     <p>{htmlToReactParser.parse(_.truncate(item.excerpt, {'length': TPW.EXCERPT_LENGTH}))}</p>
                     <div className="blog_author">
                       <div className="imgbox">
@@ -456,6 +539,9 @@ class Home extends Component {
                       <span>{item.author}</span>
                     </div>
                     <div className="readmore">
+                      <Link to={"/member/"+ item.user_login} className="trans" title={item.author}>
+                        <img src={item.author_avatar} className="absoImg_hover" alt="" />
+                      </Link>
                       { item.post_format.length > 0 && item.post_format[0].name  === 'Video'?
                       <Link to={`${item.terms[0].slug}/${item.slug}`} className="trans" title="Watch Now" style={{ 'color': item.term_color }}>Watch Now</Link>
                       : <Link to={`${item.terms[0].slug}/${item.slug}`} className="trans" title="View Post" style={{ 'color': item.term_color }}>View Post</Link>
@@ -465,15 +551,23 @@ class Home extends Component {
                       <ul>
                         <li>
                           <button className="trans save_blog" title="Save" data-id={item.id} onClick={boundItemClick} style={{ 'color': item.term_color }}>
-                          { item.save_post_status === false ? this.state.savedId.includes(item.id) ? <img className="svg" src={ item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon.url } alt="Save" /> 
-                          : item.save_post_status === true ? <img className="svg" src={ item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon.url } alt="Save" /> }
+                          { item.save_post_status === false ? this.state.savedId.includes(item.id) ? <img className="svg" src={ item.term_saved_icon !==null && item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon !==null && item.term_save_icon.url } alt="Save" /> 
+                          : item.save_post_status === true ? <img className="svg" src={ item.term_saved_icon !==null && item.term_saved_icon.url } alt="Saved" /> : <img className="svg" src={ item.term_save_icon !==null && item.term_save_icon.url } alt="Save" /> }
                           Save
                           </button>
                         </li>
                         <li>
                           <button className="trans" title="Share" style={{ 'color': item.term_color }}>
-                          <img className="svg" src={ item.term_share_icon.url } alt="Share" />Share</button> 
+                          <img className="svg" src={ item.term_share_icon !==null && item.term_share_icon.url } alt="Share" />Share</button> 
                         </li>
+                      </ul>
+                    </div>
+                    <div className="feedmore_menu">
+                      <ion-icon name="ios-more" id="feedmore"></ion-icon>
+                      <ul className="feedmore_dropdown">
+                        <li><a href="#!">Edit</a></li>
+                        <li><a href="#!">Delete</a></li>
+                        <li><a href="#!">Report</a></li>
                       </ul>
                     </div>
                   </div>
@@ -503,9 +597,9 @@ class Home extends Component {
                   var termslug = termSlug.slug;
                 }
                 return <li key={item.id}>
-                <Link to={`/${termslug}/${item.slug}`} className="trans" title=""> 
                 <div className="product">
                   <div className="imgbox">
+                  <Link to={`/${termslug}/${item.slug}`} className="trans" title="">
                   { termslug === 'on-the-wire' ?
                       item.post_format === 'video' ? 
                       <video controls>
@@ -524,19 +618,22 @@ class Home extends Component {
                       <span><img src={ siteurl + IMAGE.trans_305 } alt="" /><img src={ item.acf ? item.acf.image_gallery[0]? item.acf.image_gallery[0].image.url:sample_image:'' } className="absoImg" alt="" /></span>
                       : null
                     }
+                    </Link>
                   </div>
                     <div className="product_detils">
-                      <span className="cat_icon"><img src={item.term_icon.url} alt={item.term_icon.alt} /></span>
-                        <span className="more_view">
-                        </span>
+                      <span className="cat_icon"><img src={ item.term_icon !==null && item.term_icon.url} alt="" /></span>
+                      <span className="more_view"></span>
+                      <Link to={`/${termslug}/${item.slug}`} className="trans" title="">
                         <h4>{htmlToReactParser.parse(item.title)}</h4>
-                        <div className="lover_block">
+                      </Link>
+                      <div className="lover_block">
+                        <Link to={"/member/"+ item.user_login} className="trans" title={item.author}>
                           <div className="imgbox"><img src={siteurl + "/src/assets/images/trans_31X31.png"} alt="" /> <img src={item.author_avatar} className="absoImg"  alt="" /></div>
-                          <span className="name">{item.author_nicename}</span>
+                          <span className="name">{item.author}</span>
+                        </Link>
                       </div>
                     </div>
                   </div>
-                </Link>
               </li>
                 })
               }
@@ -549,15 +646,8 @@ class Home extends Component {
   }
 
   render() {
-    const { homeLoading, homeItems } = this.props;
-    return (
-      <div>
-        {/* {this.getPostsView()} */}
-        {/* {this.getCommunityView()} */}
-        {homeLoading == false ? this.getHomeContent() : ''}
-      </div> 
-      
-    );
+    const { homeLoading } = this.props;
+    return ( homeLoading === false ? this.getHomeContent() : <div className="d-flex justify-content-center p-5"><h6 className="font-weight-bolder">Loading...</h6></div> );
   }
 }
 //export default Home;

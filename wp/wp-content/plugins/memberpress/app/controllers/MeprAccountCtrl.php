@@ -116,7 +116,7 @@ class MeprAccountCtrl extends MeprBaseCtrl {
     $mepr_current_user = MeprUtils::get_currentuserinfo();
     $expired_subs = $mepr_current_user->subscription_expirations('expired',true);
     $mepr_options = MeprOptions::fetch();
-    $account_url = MeprUtils::get_permalink($post->ID); //$mepr_options->account_page_url();
+    $account_url = MeprUtils::get_current_url_without_params(); //MeprUtils::get_permalink($post->ID); //$mepr_options->account_page_url();
     $delim = MeprAppCtrl::get_param_delimiter_char($account_url);
 
     MeprView::render('/account/nav', get_defined_vars());
@@ -194,6 +194,8 @@ class MeprAccountCtrl extends MeprBaseCtrl {
         }
 
         MeprHooks::do_action('mepr-save-account', $mepr_current_user);
+        // Do not call mepr-account-updated here - it's already called in save_extra_profile_fields() above
+        //MeprEvent::record('member-account-updated', $mepr_current_user);
       }
     }
     elseif(isset($_REQUEST['message']) && $_REQUEST['message']=='password_updated') {

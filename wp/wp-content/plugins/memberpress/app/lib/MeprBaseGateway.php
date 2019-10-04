@@ -348,7 +348,7 @@ abstract class MeprBaseGateway {
 
     // Assume we're either on the account page or some
     // page that is using the [mepr-account-form] shortcode
-    $account_url   = MeprUtils::get_permalink($post->ID);
+    $account_url   = MeprUtils::get_current_url_without_params(); //MeprUtils::get_permalink($post->ID);
     $account_delim = ( preg_match( '~\?~', $account_url ) ? '&' : '?' );
     $user = $subscription->user();
 

@@ -100,7 +100,7 @@ class Favourites extends Component{
                     <img src={item.avatar_url} className="absoImg" alt="" /> 
                   </div>
                   <div className="people_prof">{item.role[0]}</div>
-                  <div className="prople_name"><Link to={"/member/"+ item.user_name} className="trans" title={item.display_name}>{item.display_name}</Link></div>
+                  <div className="people_name"><Link to={"/member/"+ item.user_name} className="trans" title={item.display_name}>{item.display_name}</Link></div>
                   <div className="people_dscr"><p>{item.description}</p></div>
               </div>
             </li>

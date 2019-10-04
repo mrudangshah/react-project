@@ -54,7 +54,7 @@
         if($(obj).val().match(/(\s|\S)/)) {
           $(obj).prev('.mp-form-label').find('.mepr-coupon-loader').fadeIn();
 
-          let data = {
+          var data = {
             action: 'mepr_validate_coupon',
             code: $(obj).val(),
             prd_id: $(obj).data("prdid"),
@@ -90,18 +90,21 @@
                   }
                   if(/^free\s(forever\s)?with\scoupon/i.test(res_two)) {
                     form.find('#mepr-payment-methods-wrapper').hide();
+                    form.append('<input type="hidden" name="mepr_payment_methods_hidden" value="1">');
                   }
                 }
               });
             }
             else {
               form.find('#mepr-payment-methods-wrapper:hidden').show();
+              form.find('input[name="mepr_payment_methods_hidden"]').remove();
             }
           });
         }
         else if($(obj).val().trim() === '' && $('#mepr-payment-methods-wrapper').is(':hidden')) {
           // Looks like we need to restore the payment methods
           form.find('#mepr-payment-methods-wrapper').show();
+          form.find('input[name="mepr_payment_methods_hidden"]').remove();
         }
       }
 

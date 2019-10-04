@@ -824,7 +824,6 @@ class MeprProduct extends MeprCptModel implements MeprProductInterface {
   }
 
   public static function is_product_page($post) {
-
     $return = false;
 
     if( is_object($post) &&
@@ -837,5 +836,29 @@ class MeprProduct extends MeprCptModel implements MeprProductInterface {
     }
 
     return MeprHooks::apply_filters( 'mepr-is-product-page', $return, $post );
+  }
+
+  public static function get_highest_menu_order_active_membership_by_user( $user_id ) {
+    global $wpdb;
+
+    $user = new MeprUser( $user_id );
+
+    if( (int)$user->ID === 0 ) { return false; }
+
+    $active_memberships = array_unique( $user->active_product_subscriptions( 'ids' ), true );
+
+    if( empty( $active_memberships ) ) { return false; }
+
+    $in = '%d';
+    if( count( $active_memberships ) > 1 ) {
+      $placeholders = array_fill( 0, count( $active_memberships ), '%d' );
+      $in = implode( ',', $placeholders ); // Convert to comma separated string if > 1
+    }
+
+    $q = $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE ID IN({$in}) ORDER BY menu_order DESC, ID DESC LIMIT 1", $active_memberships );
+
+    $result = $wpdb->get_var( $q );
+
+    return ( ! is_null( $result ) ) ? $result : false;
   }
 } //End class

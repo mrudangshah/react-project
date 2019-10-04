@@ -22,7 +22,7 @@ class MeprMembersCtrl extends MeprBaseCtrl {
     add_action('mepr_subscription_deleted', array($this, 'update_member_data_from_subscription'));
     add_action('mepr_subscription_status_cancelled', array($this, 'update_member_data_from_subscription'));
     add_action('mepr_subscription_status_suspended', array($this, 'update_member_data_from_subscription'));
-    add_action('mepr-transaction-expired', array($this, 'update_txn_meta'));
+    add_action('mepr-transaction-expired', array($this, 'update_txn_meta'), 11, 2);
 
     if(is_multisite()) {
       add_action('add_user_to_blog', array($this, 'update_member_meta'));
@@ -240,7 +240,7 @@ class MeprMembersCtrl extends MeprBaseCtrl {
   }
 
   // This is purely for performance ... we don't want to do these queries during a listing
-  public function update_txn_meta($txn) {
+  public function update_txn_meta($txn, $sub_status = false) {
     $u = $txn->user();
     $u->update_member_data();
   }

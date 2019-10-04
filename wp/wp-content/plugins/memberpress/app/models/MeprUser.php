@@ -491,7 +491,7 @@ class MeprUser extends MeprBaseModel {
             FROM {$mepr_db->transactions}
             WHERE product_id = %d
               AND user_id = %d
-              AND ( (txn_type IN (%s,%s) AND status = %s) OR (txn_type = %s AND status = %s) )
+              AND ( (txn_type IN (%s,%s,%s,%s) AND status = %s) OR (txn_type = %s AND status = %s) )
           ORDER BY id {$order}
           LIMIT 1";
     $q =  $wpdb->prepare( $q,
@@ -499,6 +499,8 @@ class MeprUser extends MeprBaseModel {
                           $user_id,
                           MeprTransaction::$payment_str,
                           MeprTransaction::$sub_account_str,
+                          MeprTransaction::$woo_txn_str,
+                          MeprTransaction::$fallback_str,
                           MeprTransaction::$complete_str,
                           MeprTransaction::$subscription_confirmation_str,
                           MeprTransaction::$confirmed_str
@@ -757,68 +759,78 @@ class MeprUser extends MeprBaseModel {
     return $errors;
   }
 
-  public static function validate_signup($params, $errors) {
+  public static function validate_signup($params, $errors, $current_url = '') {
     $mepr_options = MeprOptions::fetch();
     $custom_fields_errors = array();
 
     extract($params);
 
     if(!MeprUtils::is_user_logged_in()) {
-      //Set user_login to user_email if that option is enabled.
-      if($mepr_options->username_is_email)
-        $user_login = (isset($user_email) && is_email($user_email))?$user_email:'placeholderToPreventEmptyUsernameErrors';
+      // Don't validate username shiz if there's no username yo!
+      if(!$mepr_options->username_is_email) {
+        if(empty($user_login)) {
+          $errors[] = __('Username must not be blank','memberpress');
+        }
 
-      if(empty($user_login))
-        $errors[] = __('Username must not be blank','memberpress');
+        if(!preg_match('#^[a-zA-Z0-9_@\.\-\+]+$#', $user_login)) { //emails can have a few more characters - so let's not block an email here
+          $errors[] = __('Username must only contain letters, numbers and/or underscores', 'memberpress');
+        }
 
-      if(!$mepr_options->username_is_email && !preg_match('#^[a-zA-Z0-9_@\.\-\+]+$#', $user_login)) //emails can have a few more characters - so let's not block an email here
-        $errors[] = __('Username must only contain letters, numbers and/or underscores', 'memberpress');
+        if(username_exists($user_login)) {
+          $current_url = urlencode(esc_url($current_url ? $current_url : $_SERVER['REQUEST_URI']));
+          $login_url = $mepr_options->login_page_url("redirect_to={$current_url}");
 
-      if(username_exists($user_login)) {
-        $current_url = urlencode(esc_url($_SERVER['REQUEST_URI']));
-        $login_url = $mepr_options->login_page_url("redirect_to={$current_url}");
-
-        $errors[] = sprintf(__('This username has already been taken. If you are an existing user, please %sLogin%s first. You will be redirected back here to complete your sign-up afterwards.', 'memberpress'), "<a href=\"{$login_url}\"><strong>", "</strong></a>");
+          $errors[] = sprintf(__('This username has already been taken. If you are an existing user, please %sLogin%s first. You will be redirected back here to complete your sign-up afterwards.', 'memberpress'), "<a href=\"{$login_url}\"><strong>", "</strong></a>");
+        }
       }
 
-      if(!is_email(stripslashes($user_email)))
+      if(!is_email(stripslashes($user_email))) {
         $errors[] = __('Email must be a real and properly formatted email address', 'memberpress');
+      }
 
       if(email_exists($user_email)) {
-        $current_url = urlencode(esc_url($_SERVER['REQUEST_URI']));
+        $current_url = urlencode(esc_url($current_url ? $current_url : $_SERVER['REQUEST_URI']));
         $login_url = $mepr_options->login_page_url("redirect_to={$current_url}");
 
         $errors[] = sprintf(__('This email address has already been used. If you are an existing user, please %sLogin%s to complete your purchase. You will be redirected back here to complete your sign-up afterwards.', 'memberpress'), "<a href=\"{$login_url}\"><strong>", "</strong></a>");
       }
 
       if($mepr_options->disable_checkout_password_fields === false) {
-        if(empty($mepr_user_password))
+        if(empty($mepr_user_password)) {
           $errors[] = __('You must enter a Password.','memberpress');
+        }
 
-        if(empty($mepr_user_password_confirm))
+        if(empty($mepr_user_password_confirm)) {
           $errors[] = __('You must enter a Password Confirmation.', 'memberpress');
+        }
 
-        if($mepr_user_password != $mepr_user_password_confirm)
+        if($mepr_user_password != $mepr_user_password_confirm) {
           $errors[] = __('Your Password and Password Confirmation don\'t match.', 'memberpress');
+        }
       }
+    }
 
-      //Honeypot
-      if((isset($mepr_no_val) && !empty($mepr_no_val)))
-        $errors[] = __('Only humans are allowed to register.', 'memberpress');
+    //Honeypot (for logged in and logged out users now)
+    if((isset($mepr_no_val) && !empty($mepr_no_val))) {
+      $errors[] = __('Only humans are allowed to register.', 'memberpress');
     }
 
     if(($mepr_options->show_fname_lname and $mepr_options->require_fname_lname) &&
-       (empty($user_first_name) || empty($user_last_name)))
+       (empty($user_first_name) || empty($user_last_name))) {
       $errors[] = __('You must enter both your First and Last name', 'memberpress');
+    }
 
-    if(isset($mepr_coupon_code) && !empty($mepr_coupon_code) && !MeprCoupon::is_valid_coupon_code($mepr_coupon_code, $mepr_product_id))
+    if(isset($mepr_coupon_code) && !empty($mepr_coupon_code) && !MeprCoupon::is_valid_coupon_code($mepr_coupon_code, $mepr_product_id)) {
       $errors[] = __('Your coupon code is invalid.', 'memberpress');
+    }
 
-    if($mepr_options->require_tos && !isset($mepr_agree_to_tos) && !isset($logged_in_purchase)) //Make sure not logged in purchase
+    if($mepr_options->require_tos && !isset($mepr_agree_to_tos)) {
       $errors[] = __('You must agree to the Terms of Service', 'memberpress');
+    }
 
-    if($mepr_options->require_privacy_policy && !isset($mepr_agree_to_privacy_policy)) //Make sure not logged in purchase
+    if($mepr_options->require_privacy_policy && !isset($mepr_agree_to_privacy_policy)) {
       $errors[] = __('You must agree to the Privacy Policy', 'memberpress');
+    }
 
     $product = new MeprProduct($mepr_product_id);
     $product_coupon_code = isset($mepr_coupon_code) ? $mepr_coupon_code : null;
@@ -858,8 +870,6 @@ class MeprUser extends MeprBaseModel {
 
     return array_merge($errors, $custom_fields_errors);
   }
-
-
 
   public static function validate_login($params, $errors) {
     extract($params);
@@ -1136,11 +1146,12 @@ class MeprUser extends MeprBaseModel {
     $q = "SELECT DISTINCT(product_id)
             FROM {$mepr_db->transactions}
           WHERE user_id = %d
-            AND ( (txn_type IN (%s,%s,%s) AND status = %s) OR ((txn_type = %s AND status = %s)) )";
+            AND ( (txn_type IN (%s,%s,%s,%s) AND status = %s) OR ((txn_type = %s AND status = %s)) )";
 
     $q = $wpdb->prepare($q, $this->ID,
                             MeprTransaction::$payment_str,
                             MeprTransaction::$sub_account_str,
+                            MeprTransaction::$woo_txn_str,
                             MeprTransaction::$fallback_str,
                             MeprTransaction::$complete_str,
                             MeprTransaction::$subscription_confirmation_str,
@@ -2022,7 +2033,7 @@ class MeprUser extends MeprBaseModel {
                  OR t.expires_at > %s
                )
                AND ( (
-                   t.txn_type IN (%s,%s,%s)
+                   t.txn_type IN (%s,%s,%s,%s)
                    AND t.status=%s
                  ) OR (
                    t.txn_type=%s
@@ -2035,6 +2046,7 @@ class MeprUser extends MeprBaseModel {
           MeprUtils::db_now(),
           MeprTransaction::$payment_str,
           MeprTransaction::$sub_account_str,
+          MeprTransaction::$woo_txn_str,
           MeprTransaction::$fallback_str,
           MeprTransaction::$complete_str,
           MeprTransaction::$subscription_confirmation_str,
@@ -2253,10 +2265,11 @@ class MeprUser extends MeprBaseModel {
         SELECT COUNT(*)
           FROM {$mepr_db->transactions} AS t
          WHERE t.user_id=u.ID
-           AND t.txn_type IN (%s, %s)
+           AND t.txn_type IN (%s,%s,%s)
       )",
       MeprTransaction::$payment_str,
-      MeprTransaction::$sub_account_str
+      MeprTransaction::$sub_account_str,
+      MeprTransaction::$woo_txn_str
     );
   }
 
@@ -2269,7 +2282,7 @@ class MeprUser extends MeprBaseModel {
           FROM {$mepr_db->transactions} AS t
          WHERE t.user_id = u.ID
            AND t.status = %s
-           AND t.txn_type IN (%s, %s)
+           AND t.txn_type IN (%s,%s,%s)
            AND ( (
                t.expires_at IS NOT NULL
                AND t.expires_at <> %s
@@ -2280,6 +2293,7 @@ class MeprUser extends MeprBaseModel {
       MeprTransaction::$complete_str,
       MeprTransaction::$payment_str,
       MeprTransaction::$sub_account_str,
+      MeprTransaction::$woo_txn_str,
       MeprUtils::db_lifetime(),
       MeprUtils::db_now()
     );
@@ -2294,7 +2308,7 @@ class MeprUser extends MeprBaseModel {
           FROM {$mepr_db->transactions} AS t
          WHERE t.user_id=u.ID
            AND t.status = %s
-           AND t.txn_type IN (%s, %s)
+           AND t.txn_type IN (%s,%s,%s)
            AND (
              t.expires_at IS NULL
              OR t.expires_at = %s
@@ -2304,6 +2318,7 @@ class MeprUser extends MeprBaseModel {
       MeprTransaction::$complete_str,
       MeprTransaction::$payment_str,
       MeprTransaction::$sub_account_str,
+      MeprTransaction::$woo_txn_str,
       MeprUtils::db_lifetime(),
       MeprUtils::db_now()
     );
@@ -2367,7 +2382,7 @@ class MeprUser extends MeprBaseModel {
              OR t.expires_at IS NULL
            )
            AND ( (
-                t.txn_type IN (%s,%s,%s)
+                t.txn_type IN (%s,%s,%s,%s)
                 AND t.status=%s
              ) OR (
                 t.txn_type=%s
@@ -2379,6 +2394,7 @@ class MeprUser extends MeprBaseModel {
       MeprUtils::db_lifetime(),
       MeprTransaction::$payment_str,
       MeprTransaction::$sub_account_str,
+      MeprTransaction::$woo_txn_str,
       MeprTransaction::$fallback_str,
       MeprTransaction::$complete_str,
       MeprTransaction::$subscription_confirmation_str,

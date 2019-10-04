@@ -143,7 +143,7 @@ class Signup extends Component {
                             <p>
                               Already have an account?{" "}
                               <a
-                                href={"/login"}
+                                href={"/user/login"}
                                 className="trans"
                                 title="Sign In"
                               >

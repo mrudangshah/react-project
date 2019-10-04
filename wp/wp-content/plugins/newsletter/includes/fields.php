@@ -264,12 +264,16 @@ class NewsletterFields {
                 'author' => '',
                 'author_name' => '',
                 'post_status' => 'publish',
-                'suppress_filters' => true
+                'suppress_filters' => true,
+                'last_post_option'=>false
             )), $args);
         $args['filters']['posts_per_page'] = $count;
 
         $posts = get_posts($args['filters']);
         $options = array();
+        if ($args['last_post_option']) {
+            $options['last'] = 'Most recent post';
+        }
         foreach ($posts as $post) {
             $options['' . $post->ID] = $post->post_title;
         }

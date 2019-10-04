@@ -9,7 +9,7 @@
                                 __('By default MemberPress will append the login form to the end of the Login page. If you would like to show it in a different place on the Login page check this box then copy and paste the shortcode that appears below where you want it to appear on the page. The [mepr-login-form] shortcode can be used on any page or post on your site to display a login form.', 'memberpress'));
   ?>
   <div id="mepr-shortcode-login-page-area">
-    [mepr-login-form]
+    [mepr-login-form use_redirect="true"]
   </div>
 
   <!-- The NONCE below prevents post meta from being blanked on move to trash -->

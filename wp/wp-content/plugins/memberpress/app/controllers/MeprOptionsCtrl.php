@@ -6,6 +6,7 @@ class MeprOptionsCtrl extends MeprBaseCtrl {
     add_action('wp_ajax_mepr_gateway_form', 'MeprOptionsCtrl::gateway_form');
     add_action('admin_enqueue_scripts', 'MeprOptionsCtrl::enqueue_scripts');
     add_action('admin_notices', 'MeprOptionsCtrl::maybe_configure_options');
+    add_action('admin_notices', 'MeprOptionsCtrl::maybe_show_stripe_checkout_warning');
   }
 
   public static function maybe_configure_options() {
@@ -15,6 +16,19 @@ class MeprOptionsCtrl extends MeprBaseCtrl {
         (!isset($_REQUEST['page']) or
           $_REQUEST['page']!='memberpress-options'))
       MeprView::render('/admin/must_configure', get_defined_vars());
+  }
+
+  public static function maybe_show_stripe_checkout_warning() {
+    if (MeprUtils::is_get_request() && isset($_GET['page']) && $_GET['page'] == 'memberpress-options') {
+      $mepr_options = MeprOptions::fetch();
+
+      foreach ($mepr_options->integrations as $integration) {
+        if (isset($integration['gateway']) && $integration['gateway'] == 'MeprStripeGateway' && isset($integration['use_stripe_checkout'])) {
+          MeprView::render('/admin/stripe_checkout_deprecated');
+          break;
+        }
+      }
+    }
   }
 
   public static function route() {
@@ -67,8 +81,9 @@ class MeprOptionsCtrl extends MeprBaseCtrl {
 
       if(count($errors) <= 0) {
         MeprHooks::do_action('mepr-process-options', $_POST);
+        $settings = MeprHooks::apply_filters( 'mepr-saved-options', $_POST );
 
-        $mepr_options->update($_POST);
+        $mepr_options->update($settings);
         $mepr_options->store();
 
         // Ensure that the rewrite rules are flushed & in place
@@ -126,6 +141,11 @@ class MeprOptionsCtrl extends MeprBaseCtrl {
       wp_register_script( 'mepr-clipboard-js', MEPR_JS_URL . '/clipboard.min.js', array(), MEPR_VERSION );
       wp_register_script( 'mepr-tooltipster', MEPR_JS_URL . '/tooltipster.bundle.min.js', array('jquery'), MEPR_VERSION );
       wp_register_script( 'mepr-copy-to-clipboard', MEPR_JS_URL . '/copy_to_clipboard.js', array('mepr-clipboard-js','mepr-tooltipster'), MEPR_VERSION );
+      wp_localize_script( 'mepr-copy-to-clipboard', 'MeprClipboard', array(
+        'copy_text' => __('Copy to Clipboard', 'memberpress'),
+        'copied_text' => __('Copied!', 'memberpress'),
+        'copy_error_text' => __('Oops, Copy Failed!', 'memberpress'),
+      ));
 
       wp_enqueue_script('mepr-options-js', MEPR_JS_URL.'/admin_options.js',
         array(

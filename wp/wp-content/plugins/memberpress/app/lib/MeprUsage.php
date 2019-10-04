@@ -60,6 +60,7 @@ class MeprUsage {
       'timestamp'          => gmdate('c'),
       'memberships'        => $this->memberships(),
       'plugins'            => $this->plugins(),
+      'options'            => $this->options(),
       'gateways'           => $this->gateways(),
       'ltv'                => MeprReports::get_average_lifetime_value(),
       //'mrr'                => '',
@@ -157,17 +158,62 @@ class MeprUsage {
     foreach($objs as $obj) {
       //$mq = $q . $wpdb->prepare(" AND product_id=%d", $obj->ID);
       $memberships[] = array(
-        'amount'       => $obj->price,
-        'recurring'    => !$obj->is_one_time_payment(),
-        'period_type'  => $obj->period_type,
-        'period'       => $obj->period,
-        'trial'        => $obj->trial,
-        'limit_cycles' => $obj->limit_cycles,
+        'amount'                     => $obj->price,
+        'recurring'                  => !$obj->is_one_time_payment(),
+        'period_type'                => $obj->period_type,
+        'period'                     => $obj->period,
+        'trial'                      => $obj->trial,
+        'limit_cycles'               => $obj->limit_cycles,
+        'tax_exempt'                 => get_option('mepr_calculate_taxes') ? $obj->is_tax_exempt() : null,
+        'thank_you_page_enabled'     => (bool) $obj->thank_you_page_enabled,
+        'thank_you_page_type'        => $obj->thank_you_page_type,
+        'welcome_email_enabled'      => !empty($obj->emails['MeprUserProductWelcomeEmail']['enabled']),
+        'customize_payment_methods'  => (bool) $obj->customize_payment_methods,
+        'customize_profile_fields'   => (bool) $obj->customize_profile_fields,
+        'simultaneous_subscriptions' => (bool) $obj->simultaneous_subscriptions,
+        'who_can_purchase'           => $this->who_can_purchase($obj),
+        'is_highlighted'             => (bool) $obj->is_highlighted,
+        'pricing_title'              => $obj->pricing_title != $obj->post_title,
+        'pricing_display'            => $obj->pricing_display,
+        'pricing_heading_txt'        => !empty($obj->pricing_heading_txt),
+        'pricing_benefits'           => !empty($obj->pricing_benefits[0]),
+        'pricing_footer_txt'         => !empty($obj->pricing_footer_txt),
+        'pricing_button_txt'         => $obj->pricing_button_txt != __('Sign Up', 'memberpress'),
+        'pricing_button_position'    => $obj->pricing_button_position,
+        'access_url'                 => !empty($obj->access_url),
+        'register_price_action'      => $obj->register_price_action,
+        'custom_login_urls_enabled'  => (bool) $obj->custom_login_urls_enabled,
+        'custom_login_urls_default'  => !empty($obj->custom_login_urls_default),
+        'custom_login_urls'          => is_array($obj->custom_login_urls) && count($obj->custom_login_urls)
         //'weekly_transactions' => $wpdb->get_var($mq),
       );
     }
 
     return $memberships;
+  }
+
+  /**
+   * Returns a comma-separated list of user types who can purchase the given product
+   *
+   * @param  MeprProduct $product
+   * @return string
+   */
+  private function who_can_purchase($product) {
+    $who_can_purchase = '';
+
+    if(is_array($product->who_can_purchase)) {
+      $user_types = array();
+
+      foreach($product->who_can_purchase as $who) {
+        if(isset($who->user_type)) {
+          $user_types[] = $who->user_type;
+        }
+      }
+
+      $who_can_purchase = join(', ', $user_types);
+    }
+
+    return $who_can_purchase;
   }
 
   private function plugins() {
@@ -193,6 +239,111 @@ class MeprUsage {
     }
 
     return $plugins;
+  }
+
+  private function options() {
+    $mepr_options = MeprOptions::fetch();
+
+    $options = array(
+      'redirect_on_unauthorized' => $mepr_options->redirect_on_unauthorized,
+      'redirect_method' => $mepr_options->redirect_method,
+      'redirect_non_singular' => $mepr_options->redirect_non_singular,
+      'unauth_show_excerpts' => $mepr_options->unauth_show_excerpts,
+      'unauth_excerpt_type' => $mepr_options->unauth_excerpt_type,
+      'unauth_excerpt_size' => $mepr_options->unauth_excerpt_size,
+      'unauth_show_login' => $mepr_options->unauth_show_login,
+      'disable_wp_admin_bar' => $mepr_options->disable_wp_admin_bar,
+      'lock_wp_admin' => $mepr_options->lock_wp_admin,
+      'allow_cancel_subs' => $mepr_options->allow_cancel_subs,
+      'allow_suspend_subs' => $mepr_options->allow_suspend_subs,
+      'enforce_strong_password' => $mepr_options->enforce_strong_password,
+      'disable_wp_registration_form' => $mepr_options->disable_wp_registration_form,
+      'coupon_field_enabled' => $mepr_options->coupon_field_enabled,
+      'username_is_email' => $mepr_options->username_is_email,
+      'pro_rated_upgrades' => $mepr_options->pro_rated_upgrades,
+      'disable_grace_init_days' => $mepr_options->disable_grace_init_days,
+      'disable_checkout_password_fields' => $mepr_options->disable_checkout_password_fields,
+      'require_tos' => $mepr_options->require_tos,
+      'enable_spc' => $mepr_options->enable_spc,
+      'require_privacy_policy' => $mepr_options->require_privacy_policy,
+      'force_login_page_url' => $mepr_options->force_login_page_url,
+      'show_fields_logged_in_purchases' => $mepr_options->show_fields_logged_in_purchases,
+      'show_fname_lname' => $mepr_options->show_fname_lname,
+      'require_fname_lname' => $mepr_options->require_fname_lname,
+      'show_address_fields' => $mepr_options->show_address_fields,
+      'require_address_fields' => $mepr_options->require_address_fields,
+      'custom_field_count' => 0,
+      'custom_field_text_count' => 0,
+      'custom_field_email_count' => 0,
+      'custom_field_url_count' => 0,
+      'custom_field_date_count' => 0,
+      'custom_field_textarea_count' => 0,
+      'custom_field_checkbox_count' => 0,
+      'custom_field_dropdown_count' => 0,
+      'custom_field_multiselect_count' => 0,
+      'custom_field_radios_count' => 0,
+      'custom_field_checkboxes_count' => 0,
+      'include_email_privacy_link' => $mepr_options->include_email_privacy_link,
+      'user_welcome_email_enabled' => !empty($mepr_options->emails['MeprUserWelcomeEmail']['enabled']),
+      'user_receipt_email_enabled' => !empty($mepr_options->emails['MeprUserReceiptEmail']['enabled']),
+      'user_cancelled_sub_email_enabled' => !empty($mepr_options->emails['MeprUserCancelledSubEmail']['enabled']),
+      'user_upgraded_sub_email_enabled' => !empty($mepr_options->emails['MeprUserUpgradedSubEmail']['enabled']),
+      'user_downgraded_sub_email_enabled' => !empty($mepr_options->emails['MeprUserDowngradedSubEmail']['enabled']),
+      'user_suspended_sub_email_enabled' => !empty($mepr_options->emails['MeprUserSuspendedSubEmail']['enabled']),
+      'user_resumed_sub_email_enabled' => !empty($mepr_options->emails['MeprUserResumedSubEmail']['enabled']),
+      'user_refunded_txn_email_enabled' => !empty($mepr_options->emails['MeprUserRefundedTxnEmail']['enabled']),
+      'user_failed_txn_email_enabled' => !empty($mepr_options->emails['MeprUserFailedTxnEmail']['enabled']),
+      'user_cc_expiring_email_enabled' => !empty($mepr_options->emails['MeprUserCcExpiringEmail']['enabled']),
+      'admin_signup_email_enabled' => !empty($mepr_options->emails['MeprAdminSignupEmail']['enabled']),
+      'admin_new_one_off_email_enabled' => !empty($mepr_options->emails['MeprAdminNewOneOffEmail']['enabled']),
+      'admin_new_sub_email_enabled' => !empty($mepr_options->emails['MeprAdminNewSubEmail']['enabled']),
+      'admin_receipt_email_enabled' => !empty($mepr_options->emails['MeprAdminReceiptEmail']['enabled']),
+      'admin_cancelled_sub_email_enabled' => !empty($mepr_options->emails['MeprAdminCancelledSubEmail']['enabled']),
+      'admin_upgraded_sub_email_enabled' => !empty($mepr_options->emails['MeprAdminUpgradedSubEmail']['enabled']),
+      'admin_downgraded_sub_email_enabled' => !empty($mepr_options->emails['MeprAdminDowngradedSubEmail']['enabled']),
+      'admin_suspended_sub_email_enabled' => !empty($mepr_options->emails['MeprAdminSuspendedSubEmail']['enabled']),
+      'admin_resumed_sub_email_enabled' => !empty($mepr_options->emails['MeprAdminResumedSubEmail']['enabled']),
+      'admin_refunded_txn_email_enabled' => !empty($mepr_options->emails['MeprAdminRefundedTxnEmail']['enabled']),
+      'admin_failed_txn_email_enabled' => !empty($mepr_options->emails['MeprAdminFailedTxnEmail']['enabled']),
+      'admin_cc_expiring_email_enabled' => !empty($mepr_options->emails['MeprAdminCcExpiringEmail']['enabled']),
+      'disable_global_autoresponder_list' => $mepr_options->disable_global_autoresponder_list,
+      'opt_in_checked_by_default' => $mepr_options->opt_in_checked_by_default,
+      'language_code' => $mepr_options->language_code,
+      'currency_code' => $mepr_options->currency_code,
+      'currency_symbol' => $mepr_options->currency_symbol,
+      'currency_symbol_after' => $mepr_options->currency_symbol_after,
+      'global_styles' => $mepr_options->global_styles,
+      'authorize_seo_views' => $mepr_options->authorize_seo_views,
+      'seo_unauthorized_noindex' => $mepr_options->seo_unauthorized_noindex,
+      'paywall_enabled' => $mepr_options->paywall_enabled,
+      'paywall_num_free_views' => $mepr_options->paywall_num_free_views,
+      'disable_mod_rewrite' => $mepr_options->disable_mod_rewrite,
+      'asynchronous_emails' => (bool) get_option('mp-bkg-email-jobs-enabled'),
+      'calculate_taxes' => (bool) get_option('mepr_calculate_taxes'),
+      'tax_calc_type' => (string) get_option('mepr_tax_calc_type'),
+      'tax_calc_location' => (string) get_option('mepr_tax_calc_location'),
+      'tax_default_address' => (string) get_option('mepr_tax_default_address'),
+      'tax_avalara_enabled' => (bool) get_option('mepr_tax_avalara_enabled'),
+      'tax_taxjar_enabled' => (bool) get_option('mepr_tax_taxjar_enabled'),
+      'tax_taxjar_enable_sandbox' => (bool) get_option('mepr_tax_taxjar_enable_sandbox'),
+      'vat_enabled' => (bool) get_option('mepr_vat_enabled'),
+      'vat_country' => (string) get_option('mepr_vat_country'),
+      'vat_tax_businesses' => (bool) get_option('mepr_vat_tax_businesses')
+    );
+
+    $custom_fields = $mepr_options->custom_fields;
+
+    if (is_array($custom_fields)) {
+      foreach ($custom_fields as $custom_field) {
+        $options['custom_field_count']++;
+
+        if (isset($custom_field->field_type, $options["custom_field_{$custom_field->field_type}_count"])) {
+          $options["custom_field_{$custom_field->field_type}_count"]++;
+        }
+      }
+    }
+
+    return array($options);
   }
 
   private function gateways() {

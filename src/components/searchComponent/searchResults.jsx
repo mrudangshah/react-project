@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import {Link, withRouter} from 'react-router-dom';
 import { tpwConfig } from '../../config';
+import _ from 'lodash';
 import $ from 'jquery';
 import 'react-loading-bar/dist/index.css'
 import { IMAGE } from './../../constants/image';
@@ -11,6 +12,7 @@ import { TPW } from './../../constants';
 const siteurl = tpwConfig.API_URL;
 const bbAPI = TPW.BbAPI;
 const allPostAPI = TPW.SearchAPI;
+var HtmlToReactParser = require('html-to-react').Parser;
 
 class SearchResults extends React.Component {
 
@@ -141,9 +143,10 @@ class SearchResults extends React.Component {
 
   renderSearchResult () {
     let { resultLoading, resultLoadingText, noSearchResultText } = this.state;
-
     let bbLength = this.state.bbMembers.length
     let sample_image = siteurl+'/src/assets/images/sample_image.png';
+    var htmlToReactParser = new HtmlToReactParser();
+
     if (bbLength > 0) {
        if(this.state.resultType === 'member') {
         let default_avtar = siteurl+IMAGE.defaultAvatar;
@@ -157,9 +160,9 @@ class SearchResults extends React.Component {
                     <img src={item.avatar_urls.full?item.avatar_urls.full:default_avtar} className="absoImg" alt="" /> 
                   </div>
                   <div className="people_prof">{item.user_role}</div>
-                  <div className="prople_name"><a href={"/member/"+ item.user_login} className="trans" title={item.name}>{item.name}</a></div>
+                  <div className="prople_name" style={{ 'text-align': 'center' }}><a href={"/member/"+ item.user_login} className="trans" title={item.name}>{item.name}</a></div>
                   <div className="people_dscr">
-                    <p>{item.user_description}</p>
+                    <p>{ _.truncate( item.user_description, {'length': '40 '} ) }</p>
                   </div>
               </div>
             </li>
@@ -190,7 +193,7 @@ class SearchResults extends React.Component {
                         <img src={""+item.cat_icon.url} alt={catTerms[0].name} />
                       </span>
                       {/* <span className="more_view"><ion-icon name="more" role="img" className="hydrated" aria-label="more"></ion-icon></span> */}
-                      <h4>{item.title}</h4>
+                      <h4>{htmlToReactParser.parse(item.title)}</h4>
                       <div className="lover_block">
                         <div className="imgbox">
                           <img src={ siteurl + IMAGE.trans_31 } alt="" /> 

@@ -45,6 +45,7 @@ function tpw_get_home_content( WP_REST_Request $request ) {
       $two_post->author = esc_html__(get_the_author(), 'text_domain');
       $two_post->author_id = get_the_author_meta('ID');
       $two_post->author_nicename = get_the_author_meta('user_nicename');
+      $two_post->user_login = get_the_author_meta('user_login');
       $two_post->author_avatar = get_avatar_url( get_the_author_meta( 'ID' ));
       $two_post->post_format = get_the_terms(get_the_ID(), 'post_format');
 
@@ -158,30 +159,32 @@ function tpw_get_home_content( WP_REST_Request $request ) {
   $final_array['twoPosts'] = $two_posts;
 
   /**
-   * Get SPONSORED post
+   ********************************************* Get SPONSORED post *********************************************
    */
+  date_default_timezone_set('UTC');
 
   $args = array(
-  	'posts_per_page'         => 1,
-    'orderby'                => 'menu_order',
-    'post__not_in'           => array($request['exclude']?: null),
-    'author_name'            => $request['author']?: '',
-    'category__in'           => 30 ,
+  	'posts_per_page'    => 1,
+    //'orderby'           => 'menu_order',
+    'meta_key'          => 'expiration_date',
+    'author_name'       => $request['author']?: '',
+    'category__in'      => 30 ,
+    'meta_query' => array(
+      array(
+          'key' => 'expiration_date',
+          'value' => date('Ymd'),
+          'compare' => '>',
+          'type' => 'DATE'
+          )
+      ),
   );
 
-  // The Query
   $query = new WP_Query( $args );
   $sponsored_posts = array();
 
   if ( $query->have_posts() ) {
   	while ( $query->have_posts() ) { 
       $query->the_post();
-      
-      date_default_timezone_set('UTC');
-      $expiration_date = get_field('expiration_date');
-      $today_date = date('Ymd');
-      
-      if( $expiration_date > $today_date ){
       
       global $post;
       $sponsored_post = new stdClass();
@@ -283,17 +286,13 @@ function tpw_get_home_content( WP_REST_Request $request ) {
           $sponsored_post->media = false;
         }
       }
-    } else{
-      $sponsored_post = null;
-    }
 
       // Push the post to the main $post array
       array_push($sponsored_posts, $sponsored_post);
   	}
 
   } else {
-    // return empty posts array if no posts
-  	return $sponsored_posts;
+  	$sponsored_post = null;
   }
 
   // Restore original Post Data
@@ -303,16 +302,20 @@ function tpw_get_home_content( WP_REST_Request $request ) {
 
 
   /**
-   ********************************************* One regular post *********************************************
+   ********************************************* One Event Post *********************************************
    */
 
   $args = array(
+    'post_type'              => 'espresso_events',
   	'posts_per_page'         => 1,
-    'orderby'                => 'menu_order',
-    'post__not_in'           => array($request['exclude']?: null),
-    'author_name'            => $request['author']?: '',
-    'category__not_in'       => array(1,30),
-    'offset'                 => 2,
+    'tax_query' => array(
+      'relation' => 'IN',
+      array(
+          'taxonomy' => 'espresso_event_categories',
+          'field'    => 'slug',
+          'terms'    => 'mark-your-planner',
+      ),
+    ),
   );
 
   // The Query
@@ -366,16 +369,16 @@ function tpw_get_home_content( WP_REST_Request $request ) {
 
       
       /* get category data using get_the_category() */
-      $categories = get_the_category();
+      $categories = get_the_terms(get_the_ID(), 'espresso_event_categories');
 
       if( !empty($categories) ){
-        $one_reg_post->terms = get_the_terms(get_the_ID(), 'category');
+        $one_reg_post->terms = get_the_terms(get_the_ID(), 'espresso_event_categories');
         foreach ($categories as $key => $category) {
-          $one_reg_post->term_icon = get_field('cat_icon', 'category_'.$category->term_id );
-          $one_reg_post->term_color = get_field('background_color', 'category_'.$category->term_id );
-          $one_reg_post->term_save_icon = get_field('save_icon', 'category_'.$category->term_id );
-          $one_reg_post->term_saved_icon = get_field('saved_icon', 'category_'.$category->term_id );
-          $one_reg_post->term_share_icon = get_field('share_icon', 'category_'.$category->term_id );
+          $one_reg_post->term_icon = get_field('cat_icon', 'espresso_event_categories_'.$category->term_id );
+          $one_reg_post->term_color = get_field('background_color', 'espresso_event_categories_'.$category->term_id );
+          $one_reg_post->term_save_icon = get_field('save_icon', 'espresso_event_categories_'.$category->term_id );
+          $one_reg_post->term_saved_icon = get_field('saved_icon', 'espresso_event_categories_'.$category->term_id );
+          $one_reg_post->term_share_icon = get_field('share_icon', 'espresso_event_categories_'.$category->term_id );
         }
       } else {
         $one_reg_post->terms = array();
@@ -439,8 +442,7 @@ function tpw_get_home_content( WP_REST_Request $request ) {
   wp_reset_postdata();
 
   $final_array['onePosts'] = $one_reg_posts;
-  
-
+ 
   /**
    ********************************************* One community posts *********************************************
    */
@@ -517,6 +519,148 @@ function tpw_get_home_content( WP_REST_Request $request ) {
   }
   
   $final_array['communityPosts'] = $tpw_community_posts;
+
+  /**
+   ********************************************* Event Post 6th Position  *********************************************
+  */
+
+  $args = array(
+    'post_type'              => 'espresso_events',
+    'posts_per_page'         => 1,
+    'offset'                 => 2,
+    'tax_query' => array(
+      'relation' => 'IN',
+      array(
+          'taxonomy' => 'espresso_event_categories',
+          'field'    => 'slug',
+          'terms'    => 'mark-your-planner',
+      ),
+    ),
+  );
+
+  // The Query
+  $query = new WP_Query( $args );
+  $event_posts = array();
+
+  if ( $query->have_posts() ) {
+  	while ( $query->have_posts() ) { 
+      $query->the_post();
+      
+      global $post;
+      $event_post = new stdClass();
+      
+      // get post data
+      $permalink = get_permalink();
+      $event_post->id = base64_encode(get_the_ID());
+      $event_post->title = get_the_title();
+      $event_post->slug = $post->post_name;
+      $event_post->permalink = $permalink;
+      $event_post->date = get_the_date('c');
+      $event_post->date_modified = get_the_modified_date('c');
+      $event_post->excerpt = get_the_excerpt();
+
+      // show post content unless parameter is false
+      if( $content === null || $show_content === true ) {
+        $event_post->content = apply_filters('the_content', get_the_content());
+      }
+
+      $event_post->author = esc_html__(get_the_author(), 'text_domain');
+      $event_post->author_id = get_the_author_meta('ID');
+      $event_post->author_nicename = get_the_author_meta('user_nicename');
+      $event_post->author_avatar = get_avatar_url( get_the_author_meta( 'ID' ));
+      $event_post->post_format = get_the_terms(get_the_ID(), 'post_format');
+
+      /* check post id is save by user or not start*/
+      global $wpdb;
+
+      $tablename = $wpdb->prefix.'custom_savepost_id';
+
+      $exists_postid = $wpdb->get_var( $wpdb->prepare(
+        "SELECT COUNT(*) FROM $tablename WHERE save_post_id = %d", $event_post->id
+      ) );
+
+      if ( $exists_postid ) {
+          $post_status = "True";
+      } else {
+          $post_status = "False";
+      } 
+
+      $event_post->save_post_status = $post_status === 'True'? true: false;
+
+      
+      /* get category data using get_the_category() */
+      $categories = get_the_terms(get_the_ID(), 'espresso_event_categories');
+
+      if( !empty($categories) ){
+        $event_post->terms = get_the_terms(get_the_ID(), 'espresso_event_categories');
+        foreach ($categories as $key => $category) {
+          $event_post->term_icon = get_field('cat_icon', 'espresso_event_categories_'.$category->term_id );
+          $event_post->term_color = get_field('background_color', 'espresso_event_categories_'.$category->term_id );
+          $event_post->term_save_icon = get_field('save_icon', 'espresso_event_categories_'.$category->term_id );
+          $event_post->term_saved_icon = get_field('saved_icon', 'espresso_event_categories_'.$category->term_id );
+          $event_post->term_share_icon = get_field('share_icon', 'espresso_event_categories_'.$category->term_id );
+        }
+      } else {
+        $event_post->terms = array();
+      }
+
+      /* get tag data using get_the_tags() */
+      $tags = get_the_tags();
+
+      $bre_tags = [];
+      $bre_tag_ids = [];
+
+      if( !empty($tags) ){
+        foreach ($tags as $key => $tag) {
+          array_push($bre_tag_ids, $tag->term_id);
+          array_push($bre_tags, $tag->name);
+        }
+      }
+
+
+      $event_post->tag_ids = $bre_tag_ids;
+      $event_post->tag_names = $bre_tags;
+
+      /* return acf fields if they exist and depending on query string */
+      if( $acf === null || $show_acf === true ) {
+        $event_post->acf = bre_get_acf();
+      }
+
+      /* return Yoast SEO fields if they exist and depending on query string */
+      if( $yoast === null || $show_yoast === true ) {
+        $event_post->yoast = bre_get_yoast( $event_post->id );
+      }
+
+      /* get possible thumbnail sizes and urls if query set to true or by default */
+
+      if( $media === null || $show_media === true ) {
+        $thumbnail_names = get_intermediate_image_sizes();
+        $bre_thumbnails = new stdClass();
+
+        if( has_post_thumbnail() ){
+          foreach ($thumbnail_names as $key => $name) {
+            $bre_thumbnails->$name = esc_url(get_the_post_thumbnail_url($post->ID, $name));
+          }
+
+          $event_post->media = $bre_thumbnails;
+        } else {
+          $event_post->media = false;
+        }
+      }
+
+      // Push the post to the main $post array
+      array_push($event_posts, $event_post);
+  	}
+
+  } else {
+    // return empty posts array if no posts
+  	return $event_posts;
+  }
+
+  // Restore original Post Data
+  wp_reset_postdata();
+
+  $final_array['eventPost'] = $event_posts;
 
   /**
    ********************************************* Three regular posts *********************************************

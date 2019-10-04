@@ -120,7 +120,7 @@ class MeprBlocksCtrl extends MeprBaseCtrl {
    * @return string
    */
   public function render_login_block( $props ) {
-    $shortcode = isset( $props['use_redirect'] ) && true === $props['use_redirect'] ? "[mepr-login-form use_redirect='true']" : "[mepr-login-form]";
+    $shortcode = isset( $props['use_redirect'] ) && true === $props['use_redirect'] ? "[mepr-login-form show_logged_in='false' use_redirect='true']" : "[mepr-login-form]";
     ob_start();
     echo do_shortcode( $shortcode );
     return ob_get_clean();

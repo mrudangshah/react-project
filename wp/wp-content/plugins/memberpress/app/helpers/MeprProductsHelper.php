@@ -216,11 +216,11 @@ class MeprProductsHelper {
 
     //Handle renewals
     if($product && $product->is_renewal() && ($last_txn = $product->get_last_active_txn($user->ID))) {
-      $new_created_at = strtotime($last_txn->expires_at);
+      $new_created_at = $last_txn->expires_at;
       $new_expires_at = $product->get_expires_at();
 
-      $new_created_at = date_i18n('Y-m-d', $new_created_at, true);
-      $new_expires_at = date_i18n('Y-m-d', $new_expires_at, true);
+      $new_created_at = MeprAppHelper::format_date($new_created_at);
+      $new_expires_at = MeprAppHelper::format_date(gmdate('Y-m-d H:i:s', $new_expires_at));
 
       $renewal_str .= sprintf(__(' (renewal for %s to %s)', 'memberpress'), $new_created_at, $new_expires_at);
     }

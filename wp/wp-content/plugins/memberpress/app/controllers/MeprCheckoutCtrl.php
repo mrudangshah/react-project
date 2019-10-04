@@ -139,12 +139,12 @@ class MeprCheckoutCtrl extends MeprBaseCtrl {
 
     extract($_REQUEST);
     if(isset($_REQUEST['errors'])) {
-      $errors = $_REQUEST['errors'];
+      $errors = array_map( 'wp_kses_post', $_REQUEST['errors'] ); // Use kses here so our error HTML isn't stripped
     }
     //See if Coupon was passed via GET
     if(isset($_GET['coupon']) && !empty($_GET['coupon'])) {
       if(MeprCoupon::is_valid_coupon_code($_GET['coupon'], $product->ID)) {
-        $mepr_coupon_code = sanitize_text_field( $_GET['coupon'] );
+        $mepr_coupon_code = htmlentities( sanitize_text_field( $_GET['coupon'] ) );
       }
     }
 
@@ -250,129 +250,149 @@ class MeprCheckoutCtrl extends MeprBaseCtrl {
       }
     }
 
-    // Create a new transaction and set our new membership details
-    $txn = new MeprTransaction();
-    $txn->user_id = $usr->ID;
+    if(isset($_POST['mepr_transaction_id']) && is_numeric($_POST['mepr_transaction_id'])) {
+      // With the new Stripe SCA changes a transaction already exists, just grab the vars we need for the hooks
+      $txn = new MeprTransaction((int) $_POST['mepr_transaction_id']);
 
-    // Get the membership in place
-    $txn->product_id = sanitize_text_field($_POST['mepr_product_id']);
-    $product = $txn->product();
-
-    // If we're showing the fields on logged in purchases, let's save them here
-    if(!$is_existing_user || ($is_existing_user && $mepr_options->show_fields_logged_in_purchases)) {
-      MeprUsersCtrl::save_extra_profile_fields($usr->ID, true, $product, true);
-      $usr = new MeprUser($usr->ID); //Re-load the user object with the metadata now (helps with first name last name missing from hooks below)
-    }
-
-    // Set default price, adjust it later if coupon applies
-    $price = $product->adjusted_price();
-
-    // Default coupon object
-    $cpn = (object)array('ID' => 0, 'post_title' => null);
-
-    // Adjust membership price from the coupon code
-    if(isset($_POST['mepr_coupon_code']) && !empty($_POST['mepr_coupon_code'])) {
-      // Coupon object has to be loaded here or else txn create will record a 0 for coupon_id
-      $mepr_coupon_code = sanitize_text_field( $_POST['mepr_coupon_code'] );
-      $cpn = MeprCoupon::get_one_from_code(sanitize_text_field($_POST['mepr_coupon_code']));
-
-      if(($cpn !== false) || ($cpn instanceof MeprCoupon)) {
-        $price = $product->adjusted_price($cpn->post_title);
+      if(empty($txn->id)) {
+        $_POST['errors'] = array(__('Sorry, we were unable to find the transaction.', 'memberpress'));
+        return;
       }
-    }
 
-    $txn->set_subtotal($price);
+      $product = $txn->product();
 
-    // Set the coupon id of the transaction
-    $txn->coupon_id = $cpn->ID;
-
-    // Figure out the Payment Method
-    if(isset($_POST['mepr_payment_method']) && !empty($_POST['mepr_payment_method'])) {
-      $txn->gateway = sanitize_text_field($_POST['mepr_payment_method']);
-    }
-    else {
-      $txn->gateway = MeprTransaction::$free_gateway_str;
-    }
-
-    // Let's checkout now
-    if($txn->gateway === MeprTransaction::$free_gateway_str) {
-      $signup_type = 'free';
-    }
-    elseif(($pm = $txn->payment_method()) && $pm instanceof MeprBaseExclusiveRecurringGateway) {
-      $sub_attrs = $pm->subscription_attributes($product->plan_code);
-      if($pm->is_one_time_payment($product->plan_code)) {
-        $signup_type = 'non-recurring';
-        $price = $sub_attrs[ 'one_time_amount' ];
-      }
-      else {
-        $signup_type = 'recurring';
-
-        // Create the subscription from the gateway plan
-        $sub = new MeprSubscription($sub_attrs);
-        $sub->user_id = $usr->ID;
-        $sub->gateway = $pm->id;
-        $sub->product_id = $product->ID;
-        $sub->maybe_prorate(); // sub to sub
-        $sub->store();
-
-        // Update the transaction with subscription id
-        $txn->subscription_id = $sub->id;
-        $price = $sub->price;
-      }
-      // Update subtotal
-      $txn->amount = $price;
-    }
-    elseif(($pm = $txn->payment_method()) && ($pm instanceof MeprBaseRealGateway)) {
-      // Set default price, adjust it later if coupon applies
-      $price = $product->adjusted_price();
-      // Default coupon object
-      $cpn = (object)array('ID' => 0, 'post_title' => null);
-      // Adjust membership price from the coupon code
-      if(isset($_POST['mepr_coupon_code']) && !empty($_POST['mepr_coupon_code'])) {
-        // Coupon object has to be loaded here or else txn create will record a 0 for coupon_id
-        $cpn = MeprCoupon::get_one_from_code(sanitize_text_field($_POST['mepr_coupon_code']));
-        if(($cpn !== false) || ($cpn instanceof MeprCoupon)) {
-          $price = $product->adjusted_price($cpn->post_title);
-        }
-      }
-      $txn->set_subtotal($price);
-      // Set the coupon id of the transaction
-      $txn->coupon_id = $cpn->ID;
-      // Create a new subscription
       if($product->is_one_time_payment()) {
         $signup_type = 'non-recurring';
       }
       else {
         $signup_type = 'recurring';
-
-        $sub = new MeprSubscription();
-        $sub->user_id = $usr->ID;
-        $sub->gateway = $pm->id;
-        $sub->load_product_vars($product, $cpn->post_title, true);
-        $sub->maybe_prorate(); // sub to sub
-        $sub->store();
-
-        $txn->subscription_id = $sub->id;
       }
     }
     else {
-      $_POST['errors'] = array(__('Invalid payment method', 'memberpress'));
-      return;
-    }
+      // Create a new transaction and set our new membership details
+      $txn = new MeprTransaction();
+      $txn->user_id = $usr->ID;
 
-    $txn->store();
+      // Get the membership in place
+      $txn->product_id = sanitize_text_field($_POST['mepr_product_id']);
+      $product = $txn->product();
 
-    if(empty($txn->id)) {
-      // Don't want any loose ends here if the $txn didn't save for some reason
-      if($signup_type==='recurring' && ($sub instanceof MeprSubscription)) {
-        $sub->destroy();
+      // If we're showing the fields on logged in purchases, let's save them here
+      if(!$is_existing_user || ($is_existing_user && $mepr_options->show_fields_logged_in_purchases)) {
+        MeprUsersCtrl::save_extra_profile_fields($usr->ID, true, $product, true);
+        $usr = new MeprUser($usr->ID); //Re-load the user object with the metadata now (helps with first name last name missing from hooks below)
       }
-      $_POST['errors'] = array(__('Sorry, we were unable to create a transaction.', 'memberpress'));
-      return;
+
+      // Set default price, adjust it later if coupon applies
+      $price = $product->adjusted_price();
+
+      // Default coupon object
+      $cpn = (object)array('ID' => 0, 'post_title' => null);
+
+      // Adjust membership price from the coupon code
+      if(isset($_POST['mepr_coupon_code']) && !empty($_POST['mepr_coupon_code'])) {
+        // Coupon object has to be loaded here or else txn create will record a 0 for coupon_id
+        $mepr_coupon_code = htmlentities(sanitize_text_field($_POST['mepr_coupon_code']));
+        $cpn = MeprCoupon::get_one_from_code(sanitize_text_field($_POST['mepr_coupon_code']));
+
+        if(($cpn !== false) || ($cpn instanceof MeprCoupon)) {
+          $price = $product->adjusted_price($cpn->post_title);
+        }
+      }
+
+      $txn->set_subtotal($price);
+
+      // Set the coupon id of the transaction
+      $txn->coupon_id = $cpn->ID;
+
+      // Figure out the Payment Method
+      if(isset($_POST['mepr_payment_method']) && !empty($_POST['mepr_payment_method'])) {
+        $txn->gateway = sanitize_text_field($_POST['mepr_payment_method']);
+      }
+      else {
+        $txn->gateway = MeprTransaction::$free_gateway_str;
+      }
+
+      // Let's checkout now
+      if($txn->gateway === MeprTransaction::$free_gateway_str) {
+        $signup_type = 'free';
+      }
+      elseif(($pm = $txn->payment_method()) && $pm instanceof MeprBaseExclusiveRecurringGateway) {
+        $sub_attrs = $pm->subscription_attributes($product->plan_code);
+        if($pm->is_one_time_payment($product->plan_code)) {
+          $signup_type = 'non-recurring';
+          $price = $sub_attrs['one_time_amount'];
+        }
+        else {
+          $signup_type = 'recurring';
+
+          // Create the subscription from the gateway plan
+          $sub = new MeprSubscription($sub_attrs);
+          $sub->user_id = $usr->ID;
+          $sub->gateway = $pm->id;
+          $sub->product_id = $product->ID;
+          $sub->maybe_prorate(); // sub to sub
+          $sub->store();
+
+          // Update the transaction with subscription id
+          $txn->subscription_id = $sub->id;
+          $price = $sub->price;
+        }
+        // Update subtotal
+        $txn->amount = $price;
+      }
+      elseif(($pm = $txn->payment_method()) && ($pm instanceof MeprBaseRealGateway)) {
+        // Set default price, adjust it later if coupon applies
+        $price = $product->adjusted_price();
+        // Default coupon object
+        $cpn = (object)array('ID' => 0, 'post_title' => null);
+        // Adjust membership price from the coupon code
+        if(isset($_POST['mepr_coupon_code']) && !empty($_POST['mepr_coupon_code'])) {
+          // Coupon object has to be loaded here or else txn create will record a 0 for coupon_id
+          $cpn = MeprCoupon::get_one_from_code(sanitize_text_field($_POST['mepr_coupon_code']));
+          if(($cpn !== false) || ($cpn instanceof MeprCoupon)) {
+            $price = $product->adjusted_price($cpn->post_title);
+          }
+        }
+        $txn->set_subtotal($price);
+        // Set the coupon id of the transaction
+        $txn->coupon_id = $cpn->ID;
+        // Create a new subscription
+        if($product->is_one_time_payment()) {
+          $signup_type = 'non-recurring';
+        }
+        else {
+          $signup_type = 'recurring';
+
+          $sub = new MeprSubscription();
+          $sub->user_id = $usr->ID;
+          $sub->gateway = $pm->id;
+          $sub->load_product_vars($product, $cpn->post_title, true);
+          $sub->maybe_prorate(); // sub to sub
+          $sub->store();
+
+          $txn->subscription_id = $sub->id;
+        }
+      }
+      else {
+        $_POST['errors'] = array(__('Invalid payment method', 'memberpress'));
+        return;
+      }
+
+      $txn->store();
+
+      if(empty($txn->id)) {
+        // Don't want any loose ends here if the $txn didn't save for some reason
+        if($signup_type === 'recurring' && ($sub instanceof MeprSubscription)) {
+          $sub->destroy();
+        }
+        $_POST['errors'] = array(__('Sorry, we were unable to create a transaction.', 'memberpress'));
+        return;
+      }
     }
 
     try {
-      if(('free' !== $signup_type) && ($pm instanceof MeprBaseRealGateway)) {
+      if(('free' !== $signup_type) && isset($pm) && ($pm instanceof MeprBaseRealGateway)) {
         $pm->process_signup_form($txn);
       }
 
@@ -411,7 +431,7 @@ class MeprCheckoutCtrl extends MeprBaseCtrl {
           'mepr_payment_method'       => $_POST['mepr_payment_method'],
         );
         if(!empty($_POST['mepr_coupon_code'])) {
-          $query_params = array_merge(array('mepr_coupon_code' => sanitize_text_field( $_POST['mepr_coupon_code'] )), $query_params);
+          $query_params = array_merge(array('mepr_coupon_code' => htmlentities( sanitize_text_field( $_POST['mepr_coupon_code'] ) )), $query_params);
         }
         $product = $txn->product();
         $checkout_url = add_query_arg($query_params, $product->url());

@@ -33,10 +33,11 @@ class MeprTransaction extends MeprBaseMetaModel implements MeprProductInterface,
   }
 
   // Transaction Types
-  public static $payment_str                   = 'payment';
-  public static $subscription_confirmation_str = 'subscription_confirmation';
-  public static $sub_account_str               = 'sub_account';
-  public static $fallback_str                  = 'fallback';
+  public static $payment_str                    = 'payment';
+  public static $subscription_confirmation_str  = 'subscription_confirmation';
+  public static $sub_account_str                = 'sub_account';
+  public static $woo_txn_str                    = 'wc_transaction';
+  public static $fallback_str                   = 'fallback';
 
   // Statuses
   public static $pending_str   = 'pending';
@@ -245,9 +246,10 @@ class MeprTransaction extends MeprBaseMetaModel implements MeprProductInterface,
     if($include_confirmations) {
       // Also include sub_account transactions if there are any
       $where .= $wpdb->prepare(
-        'AND (( t.txn_type IN (%s,%s,%s) AND t.status=%s ) OR ( t.txn_type=%s AND t.status=%s )) ',
+        'AND (( t.txn_type IN (%s,%s,%s,%s) AND t.status=%s ) OR ( t.txn_type=%s AND t.status=%s )) ',
         self::$payment_str,
         self::$sub_account_str,
+        self::$woo_txn_str,
         self::$fallback_str,
         self::$complete_str,
         self::$subscription_confirmation_str,

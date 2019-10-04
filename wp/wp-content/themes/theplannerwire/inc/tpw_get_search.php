@@ -28,17 +28,18 @@ function tpw_get_search( WP_REST_Request $request )  {
   // WP_Query arguments
   $args = array(
     'post_type'              => 'post',
+    'post_status'            => 'publish',
   	'posts_per_page'         => -1,
-    'cat'                    => $category,
     'category_name'          => $category_name,
-    'tag_id'                 => $tag,
     'order'                  => 'DESC',
     'orderby'                => 'date',
-    's'                      => $search
+    's'                      => $search,
   );
 
   // The Query
   $query = new WP_Query( $args );
+
+  //print_r($query); exit;
 
   // Setup Posts Array
   $posts = array();

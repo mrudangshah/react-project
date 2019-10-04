@@ -8,6 +8,8 @@ const siteurl = tpwConfig.API_URL;
  * Get BlogData
  */
 export const getBlog = (type, offset) => {
+  
+  if( window.location.pathname !== '/mark-your-planner' ){
     return (dispatch) => {
 
 	    dispatch({ type: 'BLOG_LOADING_START'})
@@ -15,7 +17,7 @@ export const getBlog = (type, offset) => {
       axios.get(siteurl + TPW.CATEGORY_API + type, {
         headers: { 'Content-Type': 'application/json' } })
         .then(response => {
-        let ary =  response.data.slice(0, offset)
+        let ary =  response.data
         dispatch({
             type: 'SET_BLOG_DATA',
             list: response.data,
@@ -24,7 +26,8 @@ export const getBlog = (type, offset) => {
             offSetCnt: 3
         })
         dispatch({ type: 'BLOG_LOADING_DONE'})
-    });
+      });
+    }
   }
 }
 

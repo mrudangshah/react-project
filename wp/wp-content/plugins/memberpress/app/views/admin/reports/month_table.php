@@ -30,7 +30,7 @@
       <tr class="<?php echo $alternate; ?>">
         <td>
           <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=memberpress-trans&membership='.$curr_product.'&month='.$curr_month.'&day='.$r->day.'&year='.$curr_year), 'customize_transactions', 'mepr_transactions_nonce'); ?>">
-            <?php echo MeprReports::make_table_date($curr_month, $r->day, $curr_year); ?>
+            <?php echo MeprReports::make_table_date($curr_month, $r->day, $curr_year, get_option('date_format')); ?>
           </a>
         </td>
         <td>

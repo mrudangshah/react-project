@@ -10,6 +10,7 @@ import blog from './blogReducer';
 import page from './index';
 import event from './eventReducer';
 import singleEvent from './singleEvent';
+import searchResult from './searchResultReducer'
 
 export default combineReducers({
     authentication,

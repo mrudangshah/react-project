@@ -8,6 +8,7 @@ class MeprEventsCtrl extends MeprBaseCtrl {
     add_action('user_register', array($this, 'user_register'));
     add_action('delete_user', array($this, 'delete_user'));
     add_action('mepr-txn-expired', array($this, 'txn_expired'), 10, 2);
+    add_filter('mepr_create_subscription', array($this, 'sub_created'));
   }
 
   public function user_register($user_id) {
@@ -36,5 +37,11 @@ class MeprEventsCtrl extends MeprBaseCtrl {
         $sub->is_expired() ) {
       MeprEvent::record('subscription-expired', $sub, $txn);
     }
+  }
+
+  public function sub_created($sub_id) {
+    $sub = new MeprSubscription($sub_id);
+    MeprEvent::record('subscription-created', $sub);
+    return $sub_id;
   }
 } //End class

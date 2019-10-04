@@ -261,15 +261,13 @@ class MeprSubscription extends MeprBaseMetaModel implements MeprProductInterface
     ";
 
     //Canceled subscriptions are not "lapsed" - don't change this or it breaks sub -> lifetime -> sub upgrades
-    //This may cause already canceled subs to not be expired when upgrading or downgrading though, but I'm not sure what we can do about that
-    //They will expire naturally luckily though
     if($look_for_lapsed) {
       $sql .= "
-          AND sub.status <> %s
+          AND ( sub.status <> %s OR sub.status = %s and t.expires_at > %s )
         {$order}{$limit}
       ";
 
-      $sql = $wpdb->prepare($sql, $user_id, MeprTransaction::$complete_str, MeprTransaction::$confirmed_str, MeprSubscription::$pending_str, MeprSubscription::$cancelled_str);
+      $sql = $wpdb->prepare($sql, $user_id, MeprTransaction::$complete_str, MeprTransaction::$confirmed_str, MeprSubscription::$pending_str, MeprSubscription::$cancelled_str, MeprSubscription::$cancelled_str, MeprUtils::db_now());
     }
     else {
       $sql .= "
@@ -426,7 +424,7 @@ class MeprSubscription extends MeprBaseMetaModel implements MeprProductInterface
              OR expiring_txn.expires_at < %s
            THEN %s
            WHEN expiring_txn.status IN (%s,%s)
-            AND expiring_txn.txn_type IN (%s,%s)
+            AND expiring_txn.txn_type IN (%s,%s,%s)
            THEN %s
          ELSE %s
        END
@@ -438,7 +436,8 @@ class MeprSubscription extends MeprBaseMetaModel implements MeprProductInterface
       MeprTransaction::$confirmed_str,
       MeprTransaction::$complete_str,
       MeprTransaction::$subscription_confirmation_str,
-      'sub_account',
+      MeprTransaction::$sub_account_str,
+      MeprTransaction::$woo_txn_str,
       '<span class="mepr-active">' . __('Yes','memberpress') . '</span>',
       '<span class="mepr-active">' . __('Yes','memberpress') . '</span>'
     );
@@ -790,6 +789,10 @@ class MeprSubscription extends MeprBaseMetaModel implements MeprProductInterface
     $mepr_db = new MeprDb();
 
     if(!empty($where)) { $where = "AND {$where}"; }
+
+    if(!empty($order) && !preg_match('/ORDER BY/i', $order)) {
+      $order = "ORDER BY {$order}";
+    }
 
     $query = "SELECT id FROM {$mepr_db->transactions} AS t
                 WHERE t.subscription_id = %d

@@ -106,7 +106,7 @@ class Login extends Component {
                         </li>
                         <li>
                           <div className="custom_group">
-                            <p>Don’t have an account yet? <a href={'/signup'} className="trans" title="Sign Up">Sign Up</a>.</p>
+                            <p>Don’t have an account yet? <a href={'/user/signup'} className="trans" title="Sign Up">Sign Up</a>.</p>
                             {this.props.message.isValid === false &&
                               <Alert variant="warning">{htmlToReactParser.parse(this.props.message.error)}</Alert>
                             }

@@ -13,7 +13,7 @@ class MeprUpdateStripeMetadataJob extends MeprBaseJob {
 
     $args = MeprHooks::apply_filters('mepr_stripe_update_transaction_metadata_args', [
       'metadata' => [
-        'platform' => 'MemberPress umINkWVxMn6uQwi4iX8pEWN36wTa0w0n',
+        'platform' => 'MemberPress Connect acct_1FIIDhKEEWtO8ZWC',
         'transaction_id' => $txn->id,
         'site_url' => esc_url( get_site_url() )
       ]

@@ -1,3 +1,5 @@
 07-08-2019 09:55:53 - ERROR - m: 11.5 MB, u: 0 - Blocked by transient newsletter_main_engine set 1 seconds ago by /var/www/html/reacttpw/wp/;MrudangShah
 07-08-2019 11:48:41 - ERROR - m: 11.8 MB, u: 0 - Blocked by transient newsletter_main_engine set 1 seconds ago by /var/www/html/reacttpw/wp/;MrudangShah
 07-08-2019 13:02:20 - ERROR - m: 11.4 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago by /var/www/html/reacttpw/wp/;MrudangShah
+19-08-2019 08:51:57 - ERROR - m: 11.5 MB, u: 0 - Blocked by transient newsletter_main_engine set 0 seconds ago by /var/www/html/reacttpw/wp/;MrudangShah
+30-08-2019 04:01:44 - ERROR - m: 11.6 MB, u: 0 - Blocked by transient newsletter_main_engine set 1 seconds ago by /var/www/html/reacttpw/wp/;MrudangShah

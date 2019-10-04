@@ -136,23 +136,18 @@
       <input type="hidden" id="mepr_coupon_code-<?php echo $product->ID; ?>" name="mepr_coupon_code" value="<?php echo (isset($mepr_coupon_code))?esc_attr(stripslashes($mepr_coupon_code)):''; ?>" />
     <?php endif; ?>
 
-    <?php if(!MeprUtils::is_user_logged_in()): ?>
-      <?php if($mepr_options->require_tos): ?>
-        <div class="mp-form-row mepr_tos">
-          <label for="mepr_agree_to_tos" class="mepr-checkbox-field mepr-form-input"><!-- don't mark this required, we'll let PHP validate it -->
-            <input type="checkbox" name="mepr_agree_to_tos" id="mepr_agree_to_tos" <?php checked(isset($mepr_agree_to_tos)); ?> />
-            <a href="<?php echo stripslashes($mepr_options->tos_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo stripslashes($mepr_options->tos_title); ?></a>*
-          </label>
-        </div>
-      <?php endif; ?>
-
-      <?php // This thing needs to be hidden in order for this to work so we do it explicitly as a style ?>
-      <input type="text" id="mepr_no_val" name="mepr_no_val" class="mepr-form-input" autocomplete="off" />
+    <?php if($mepr_options->require_tos): ?>
+      <div class="mp-form-row mepr_tos">
+        <label for="mepr_agree_to_tos" class="mepr-checkbox-field mepr-form-input" required>
+          <input type="checkbox" name="mepr_agree_to_tos" id="mepr_agree_to_tos" <?php checked(isset($mepr_agree_to_tos)); ?> />
+          <a href="<?php echo stripslashes($mepr_options->tos_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo stripslashes($mepr_options->tos_title); ?></a>*
+        </label>
+      </div>
     <?php endif; ?>
 
     <?php if($mepr_options->require_privacy_policy && $privacy_page_link = MeprAppHelper::privacy_policy_page_link()): ?>
       <div class="mp-form-row">
-        <label for="mepr_agree_to_privacy_policy" class="mepr-checkbox-field mepr-form-input">
+        <label for="mepr_agree_to_privacy_policy" class="mepr-checkbox-field mepr-form-input" required>
           <input type="checkbox" name="mepr_agree_to_privacy_policy" id="mepr_agree_to_privacy_policy" />
           <?php echo preg_replace('/%(.*)%/', '<a href="' . $privacy_page_link . '" target="_blank">$1</a>', __($mepr_options->privacy_policy_title, 'memberpress')); ?>
         </label>
@@ -165,6 +160,9 @@
     <div class="mepr_spacer">&nbsp;</div>
 
     <div class="mp-form-submit">
+      <?php // This mepr_no_val needs to be hidden in order for this to work so we do it explicitly as a style ?>
+      <input type="text" id="mepr_no_val" name="mepr_no_val" class="mepr-form-input" autocomplete="off" />
+
       <input type="submit" class="mepr-submit" value="<?php echo stripslashes($product->signup_button_text); ?>" />
       <img src="<?php echo admin_url('images/loading.gif'); ?>" style="display: none;" class="mepr-loading-gif" />
       <?php MeprView::render('/shared/has_errors', get_defined_vars()); ?>

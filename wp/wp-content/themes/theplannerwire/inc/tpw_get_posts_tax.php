@@ -112,9 +112,10 @@ function tpw_build_custom_tax_endpoint() {
                   $tpw_tax_post->author = esc_html__(get_the_author(), 'text_domain');
                   $tpw_tax_post->author_id = get_the_author_meta('ID');
                   $tpw_tax_post->author_nicename = get_the_author_meta('user_nicename');
-                  $author_avatar = get_avatar( get_the_author_meta( 'ID' ));
-                  $xpath = new DOMXPath(@DOMDocument::loadHTML($author_avatar));
-                  $tpw_tax_post->author_avatar = $xpath->evaluate("string(//img/@src)");
+                  $tpw_tax_post->user_login = get_the_author_meta('user_login');
+                  /* $author_avatar = get_avatar( get_the_author_meta( 'ID' ));
+                  $xpath = new DOMXPath(@DOMDocument::loadHTML($author_avatar)); */
+                  $tpw_tax_post->author_avatar = get_avatar_url( get_the_author_meta( 'ID' ));
                   $tpw_tax_post->post_format = get_the_terms(get_the_ID(), 'post_format');
 
                   /* check post id is save by user or not start*/
@@ -147,6 +148,13 @@ function tpw_build_custom_tax_endpoint() {
                       $tpw_tax_post->term_share_icon = get_field('share_icon', 'category_'.$category->term_id );
                     }
                   }
+                  
+                  $tpw_tax_post->event_cat_icon = get_field('cat_icon', 'espresso_event_categories_29' );
+                  $tpw_tax_post->event_white_icon = get_field('white_icon', 'espresso_event_categories_29' );
+                  $tpw_tax_post->event_bg_color = get_field('background_color', 'espresso_event_categories_29' );
+                  $tpw_tax_post->event_save_icon = get_field('save_icon', 'espresso_event_categories_29' );
+                  $tpw_tax_post->event_saved_icon = get_field('saved_icon', 'espresso_event_categories_29' );
+                  $tpw_tax_post->event_share_icon = get_field('share_icon', 'espresso_event_categories_29' );
                   /*
                    *
                    * get the terms

@@ -111,4 +111,16 @@ jQuery(document).ready(function($) {
       }
     });
   });
+
+  $('.mepr-confirm').on('click', function(e) {
+    var confirm_message = $(this).data('message');
+
+    if(!confirm(confirm_message)) {
+      e.preventDefault();
+    }
+  });
+
+  $('body').on('click', '#mepr_stripe_connect_upgrade_notice button.notice-dismiss', function(e){
+    Cookies.set('mepr_stripe_connect_upgrade_dismissed', '1', { expires: 7, path: '/' });
+  });
 });

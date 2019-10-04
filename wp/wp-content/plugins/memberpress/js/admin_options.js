@@ -11,6 +11,8 @@ jQuery(document).ready(function($) {
 
   show_chosen_tab(hash);
 
+  setTimeout( dismiss_notices, 5000 );
+
   function show_chosen_tab(chosen) {
     var hash = '#mepr-' + chosen;
 
@@ -28,10 +30,19 @@ jQuery(document).ready(function($) {
     window.location.hash = hash;
   }
 
+  function dismiss_notices() {
+    var notices = $('.mepr-removable-notice');
+    $.each(notices, function(index, el) {
+      el.remove();
+    });
+  }
+
   $('a.nav-tab').click(function() {
     var chosen = $(this).attr('id');
 
     show_chosen_tab(chosen);
+
+    dismiss_notices();
 
     return false;
   });
@@ -61,6 +72,11 @@ jQuery(document).ready(function($) {
   $('div#integration').on('click', '.mepr-integration-delete a', function() {
     if(confirm(MeprOptions.confirmPMDelete)) {
       $(this).parent().parent().slideUp('fast', function() {
+        $('<input>').attr({
+          type: 'hidden',
+          name: 'mepr_deleted_payment_methods[]',
+          value: $(this).data('id')
+        }).appendTo('#mepr_options_form');
         $(this).remove();
       });
     }
@@ -372,6 +388,34 @@ jQuery(document).ready(function($) {
           var msg = JSON.parse(data.responseText);
           alert('ERROR: ' + msg.error);
         }, 'json');
+    }
+  });
+
+  // Create payment method before Stripe connect redirect
+  $('body').on('click', '.mepr-stripe-connect-new', function(e) {
+    e.preventDefault();
+    var pmid = $(this).data('id');
+
+    var form_data = $('#mepr-integration-'+pmid+' input, #mepr-integration-'+pmid+' select').serialize();
+
+    var href = $(this).data('href');
+    var nonce = $(this).data('nonce');
+
+    $.post( ajaxurl, {
+        'action': 'mepr_create_new_payment_method',
+        'security': nonce,
+        'form_data':  form_data
+      },
+      function(response) {
+        window.location.href = href;
+      }
+    );
+  });
+
+  $('body').on('click', '.mepr_stripe_disconnect_button', function(e) {
+    var proceed = confirm( $(this).data('disconnect-msg') );
+    if ( false === proceed ) {
+      e.preventDefault();
     }
   });
 

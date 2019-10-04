@@ -58,7 +58,9 @@ function tpw_get_events_related_posts( WP_REST_Request $request ) {
 
       $tpw_tax_post->author = esc_html__(get_the_author(), 'text_domain');
       $tpw_tax_post->author_id = get_the_author_meta('ID');
+      $tpw_tax_post->user_login = get_the_author_meta('user_login');
       $tpw_tax_post->author_nicename = get_the_author_meta('user_nicename');
+      $tpw_tax_post->user_login = get_the_author_meta('user_login');
       $author_avatar = get_avatar( get_the_author_meta( 'ID' ));
       $xpath = new DOMXPath(@DOMDocument::loadHTML($author_avatar));
       $tpw_tax_post->author_avatar = $xpath->evaluate("string(//img/@src)");

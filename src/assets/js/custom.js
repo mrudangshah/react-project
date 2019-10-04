@@ -40,7 +40,7 @@ export function custom() {
     $(window).on('load', function () {
       setTimeout(function() {
         equalheight('.desk_dwn .inner_drpdwn li a, #blog .col_blog .inner_col_blog, .search_tab_cnt li .people_block');
-      }, 5000);
+      }, 10000);
     })
 
     $(window).on('load', function () {
@@ -136,6 +136,7 @@ export function custom() {
 
     }
 
+
     /*======= Mega-Menu and Responsive End ========*/
 
 
@@ -178,82 +179,6 @@ export function custom() {
 
     /*======= Input Value Check Jquery End ========*/
 
-    /*======= Lover Slider Jquery Start ========*/
-    /*$('#morelove_product .inner_morelove ul').slick({
-      dots: false,
-      infinite: false,
-      speed: 300,
-      slidesToShow: 4,
-      slidesToScroll: 1,
-      responsive: [{
-          breakpoint: 1024,
-          settings: {
-            slidesToShow: 2,
-            slidesToScroll: 1,
-            infinite: true,
-            dots: false
-          }
-        },
-        {
-          breakpoint: 600,
-          settings: {
-            slidesToShow: 2,
-            slidesToScroll: 1
-          }
-        },
-        {
-          breakpoint: 480,
-          settings: {
-            slidesToShow: 1,
-            slidesToScroll: 1
-          }
-        }
-      ]
-    });*/
-
-    /*======= Lover Slider Jquery End ========*/
-
-
-    /*======= Post Slider Jquery Start ========*/
-    /*$('#post_dtls .post_slider ul').slick({
-      dots: false,
-      infinite: false,
-      speed: 300,
-      slidesToShow: 4,
-      slidesToScroll: 1,
-      responsive: [{
-          breakpoint: 1024,
-          settings: {
-            slidesToShow: 3,
-            slidesToScroll: 1,
-            infinite: true,
-            dots: false
-          }
-        },
-        {
-          breakpoint: 600,
-          settings: {
-            slidesToShow: 3,
-            slidesToScroll: 1
-          }
-        },
-        {
-          breakpoint: 480,
-          settings: {
-            slidesToShow: 1,
-            slidesToScroll: 1
-          }
-        }
-        // You can unslick at a given breakpoint now by adding:
-        // settings: "unslick"
-        // instead of a settings object
-      ]
-    });*/
-
-    /*======= Post Slider Jquery End ========*/
-
-
-
     /*======= Post Slider toggle Jquery Start ========*/
     var options = {
       dots: false,
@@ -284,42 +209,14 @@ export function custom() {
             slidesToScroll: 1
           }
         }
-        // You can unslick at a given breakpoint now by adding:
-        // settings: "unslick"
-        // instead of a settings object
       ]
     }
 
-  /*$(document).on('click', '#post_dtls .see_post h3.title', function () {
-      $(this).toggleClass("open")
-      $("#post_dtls .toggle_slider").slideToggle();
-      $('#post_dtls .post_slider ul').slick('unslick');
-      $('#post_dtls .post_slider ul').slick(options);
-    });*/
-
-
-    // $("#post_dtls .see_post h3.title").on('click','h3',function() {
-    //   //alert('yes');
-    //   $(this).toggleClass("open")
-    //   $("#post_dtls .toggle_slider").slideToggle();
-    //   $('#post_dtls .post_slider ul').slick('unslick');
-    //   $('#post_dtls .post_slider ul').slick(options);
-    // });
     $('#post_dtls .post_slider ul').on('init', function () {
       //$('#post_dtls .post_slider ul').css("visibility", "visible");
       // $('.slick-initialized').css("visibility", "visible");
     });
-    /*======= Post Slider toggle Jquery End ========*/
 
-    /*======= Post Banner Slider  Jquery Start ========*/
-
-    /*$('#post_dtls.thespread .image_block.sliders ul').slick({
-      dots: true,
-      infinite: true,
-      speed: 300,
-      slidesToShow: 1,
-      adaptiveHeight: true
-    });*/
 
     /*======= Post Banner Slider toggle Jquery End ========*/
 
@@ -331,6 +228,20 @@ export function custom() {
       $("#user_login").css("min-height", win_height);
     });
     /*======= Window Height Jquery End ========*/
+	
+	$(document).on("click", "#feedmore", function(){
+      $(".feedmore_dropdown").slideUp();
+      if($(this).next(".feedmore_dropdown").is(":visible")){
+        $(this).next(".feedmore_dropdown").slideUp();
+      }
+      else
+      {
+        $(this).next(".feedmore_dropdown").slideDown();
+      }
+  }); 
 
   });
 }
+
+
+

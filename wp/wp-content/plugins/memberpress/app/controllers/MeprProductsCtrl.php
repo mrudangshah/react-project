@@ -25,6 +25,8 @@ class MeprProductsCtrl extends MeprCptCtrl {
     MeprHooks::add_shortcode('mepr-membership-purchased', 'MeprProductsCtrl::shortcode_if_product_was_purchased');
     MeprHooks::add_shortcode('mepr-membership-access-url', 'MeprProductsCtrl::shortcode_access_url_link');
 
+    MeprHooks::add_shortcode('mepr-membership-price', 'MeprProductsCtrl::shortcode_price');
+
     add_action('wp_ajax_mepr_get_product_price_str', 'MeprProductsCtrl::get_price_str_ajax');
 
     // Cleanup list view
@@ -184,7 +186,7 @@ class MeprProductsCtrl extends MeprCptCtrl {
       if($product->thank_you_page_type == 'page' && isset($_mepr_product_thank_you_page_id)) {
         if(is_numeric($_mepr_product_thank_you_page_id) && (int)$_mepr_product_thank_you_page_id > 0) {
           $product->thank_you_page_id = (int)$_mepr_product_thank_you_page_id;
-        } elseif(preg_match("#^__auto_page:(.*?)$#", $_mepr_product_thank_you_page_id, $matches)) {
+        } elseif($product->thank_you_page_enabled && preg_match("#^__auto_page:(.*?)$#", $_mepr_product_thank_you_page_id, $matches)) {
           $product->thank_you_page_id = MeprAppHelper::auto_add_page($matches[1]);
         } else {
           $product->thank_you_page_id = $product->attrs['thank_you_page_id'];
@@ -683,25 +685,26 @@ class MeprProductsCtrl extends MeprCptCtrl {
       $num_logins = $user->get_num_logins();
     }
 
-    //Get users active memberships
-    $products = $user->active_product_subscriptions('ids');
+    //Get user's active memberships
+    $membership_id = MeprProduct::get_highest_menu_order_active_membership_by_user( $user->ID );
 
-    //If no active memberships, send them to wherever they were already going.
-    if(empty($products)) { return $url; }
+    if( $membership_id === false ) {
+      return $url;
+    }
+    else {
+      $membership = new MeprProduct( $membership_id );
+    }
 
-    //Just grab the first membership the user is subscribed to
-    $product = new MeprProduct(array_shift($products));
-
-    if($product->custom_login_urls_enabled && (!empty($product->custom_login_urls_default) || !empty($product->custom_login_urls))) {
-      if(!empty($product->custom_login_urls)) {
-        foreach($product->custom_login_urls as $custom_url) {
+    if($membership->custom_login_urls_enabled && (!empty($membership->custom_login_urls_default) || !empty($membership->custom_login_urls))) {
+      if(!empty($membership->custom_login_urls)) {
+        foreach($membership->custom_login_urls as $custom_url) {
           if(!empty($custom_url) && $custom_url->count == $num_logins) {
             return stripslashes($custom_url->url);
           }
         }
       }
 
-      return (!empty($product->custom_login_urls_default) && $is_login_page)?$product->custom_login_urls_default:$url;
+      return (!empty($membership->custom_login_urls_default) && $is_login_page)?$membership->custom_login_urls_default:$url;
     }
 
     return $url;
@@ -742,4 +745,67 @@ class MeprProductsCtrl extends MeprCptCtrl {
 
     return '<a href="'.$product->access_url.'">'.$link_text.'</a>';
   }
+
+  public static function shortcode_price($atts = array(), $content = '') {
+    global $post;
+
+    if(!isset($atts['id']) && !empty($post) && $post->post_type==MeprProduct::$cpt) {
+      $membership = new MeprProduct($post->ID);
+    }
+    else if(isset($atts['id'])) {
+      $membership = new MeprProduct($atts['id']);
+    }
+    else {
+      return '';
+    }
+
+    $coupon_code = null;
+    $diff = false;
+    if(isset($atts['coupon'])) {
+      if($atts['coupon']=='param' && isset($_REQUEST['coupon'])) {
+        $coupon_code = $_REQUEST['coupon'];
+      }
+      else {
+        $coupon_code = $atts['coupon'];
+      }
+
+      if(isset($atts['diff']) && $atts['diff']) {
+        $diff = true;
+      }
+
+      $coupon = MeprCoupon::get_one_from_code($coupon_code);
+
+      if($coupon) {
+        $coupon->maybe_apply_trial_override($membership);
+      }
+    }
+
+    if($membership->trial) {
+      $adj_price = $membership->trial_amount;
+    }
+    else {
+      $adj_price = $membership->adjusted_price($coupon_code);
+    }
+
+    if($diff) {
+      $display_price = $membership->adjusted_price() - $adj_price;
+    }
+    else {
+      $display_price = $adj_price;
+    }
+
+    if(isset($atts['format'])) {
+      preg_match('!^(\d*)(\.\d*)?$!', $display_price, $price_matches);
+      if($atts['format']=='cents') {
+        $display_price = isset($price_matches[2]) ? $price_matches[2] : '&nbsp;&nbsp;&nbsp;';
+      }
+      else if($atts['format']=='dollars') {
+        $display_price = $price_matches[1];
+      }
+    }
+
+    return $display_price;
+  }
+
 } //End class
+

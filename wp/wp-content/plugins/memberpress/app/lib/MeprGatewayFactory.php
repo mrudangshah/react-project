@@ -27,7 +27,7 @@ class MeprGatewayFactory {
       $gateways = array();
 
       foreach( self::paths() as $path ) {
-        $files = @glob( $path . '/Mepr*Gateway.php', GLOB_NOSORT );
+        $files = @glob( $path . '/Mepr*Gateway.php' );
         foreach( $files as $file ) {
           $class = preg_replace( '#\.php#', '', basename($file) );
 

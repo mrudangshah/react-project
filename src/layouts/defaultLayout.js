@@ -9,7 +9,7 @@ class DefaultLayout extends Component {
         const Component = this.props.component;
         const route = this.props.route;
         const { loading } = this.props;
-        
+
         return (
             <div className="wrapper">
                 <Header route={route}/>

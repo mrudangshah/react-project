@@ -3,11 +3,21 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router'
 import { Link } from 'react-router-dom';
 import { getBlog} from './../../actions/blogAction';
+import { getEvents } from './../../actions/eventAction';
+
+var HtmlToReactParser = require('html-to-react').Parser;
+var htmlToReactParser = new HtmlToReactParser();
 
 class TopMenu extends Component {
   constructor(props){
     super(props);
-    this.state = {};
+    this.state = {
+      type: this.props.history.location.pathname,
+    };
+
+    this.props.history.listen((location, action) => {
+      this.setState({ type: location.pathname });
+    });
   }
 
   getContent = (slug) => {
@@ -15,8 +25,14 @@ class TopMenu extends Component {
     getBlog(slug, itemPerRow);
   }
 
+  getEventContent = () => {
+    const { getEvents } = this.props;
+    getEvents();
+  }
+
   handleTopMenu = () => {
     const { page } = this.props
+    const { type } = this.state
     let menuItem = page.topMenu;
     
     return (
@@ -24,7 +40,7 @@ class TopMenu extends Component {
         <ul>
           { menuItem.map((item,index) => { 
           return <li key={index} className={item.classes.join(" ")}>
-            {item.acf !== false ? <Link to={item.slug} onClick={() => this.getContent(item.slug)}>
+            {item.acf !== false ? <Link to={item.slug} onClick={ () => type === '/mark-your-planner' ? this.getEventContent() : this.getContent(item.slug) }>
             <img src={item.acf.menu_icon.url} alt={item.acf.menu_icon.alt}></img>
             {item.title}</Link> : ''}
             <div className="desk_dwn" >
@@ -35,8 +51,7 @@ class TopMenu extends Component {
                     {item.acf !== false ? <Link to={item.slug} className="trans" title={item.title} onClick={() => this.getContent(item.slug)}>
                        <img src={item.acf.menu_icon.url} className="default" alt={item.acf.menu_icon.alt} />
                       <img src={item.acf.hover_icon.url} className="hover" alt={item.acf.hover_icon.alt} />
-                      
-                      <p>{item.description}</p>
+                      <p>{htmlToReactParser.parse(item.description)}</p>
                     </Link>: ''}
                   </li>;
                 })}     
@@ -59,7 +74,7 @@ class TopMenu extends Component {
                 <img src={item.acf.menu_icon.url} className="default" alt={item.acf.menu_icon.alt} />
                 <img src={item.acf.hover_icon.url} className="hover" alt={item.acf.hover_icon.alt} />
                 <h4>{item.title}</h4>
-                <p>{item.description}</p>
+                <p>{htmlToReactParser.parse(item.description)}</p>
               </a> : ''}
               </li>
               })}
@@ -89,6 +104,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
   getBlog: (type, offset) => { dispatch(getBlog(type, offset)) },
+  getEvents: () => { dispatch(getEvents()) },
 })
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(TopMenu));

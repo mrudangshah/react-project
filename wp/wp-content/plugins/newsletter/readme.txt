@@ -2,7 +2,7 @@
 Tags: email, email marketing, newsletter, newsletter subscribers, welcome email, signup forms, contact, lead generation, popup, marketing automation
 Requires at least: 3.4.0
 Tested up to: 5.2.2
-Stable tag: 6.1.2
+Stable tag: 6.1.6
 Contributors: satollo,webagile,michael-travan
 
 Add a real newsletter system to your blog. For free. With unlimited newsletters and subscribers.
@@ -107,6 +107,25 @@ Thank you, The Newsletter Team
 3. The Reports extension
 
 == Changelog ==
+
+= 6.1.6 =
+
+* Fixed roles management
+
+= 6.1.5 =
+
+* Improved the Gutenberg block
+
+= 6.1.4 =
+
+* Support for Automated theme regeneration
+* Fixed link tracking
+
+= 6.1.3 =
+
+* Fix to avoid third party plugin notices to interfere with the composer
+* NEW! Added subscription block to the Gutenberg editor
+* Code cleanup
 
 = 6.1.2 =
 

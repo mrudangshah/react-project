@@ -46,7 +46,7 @@ if ($controls->is_action('abort')) {
 
 if ($controls->is_action('change-private')) {
     $data = array();
-    $data['private'] = $controls->data['private'] ? 0 : 1;
+    $data['private'] = $controls->data['private'] ? 1 : 0;
     $data['id'] = $email['id'];
     $email = Newsletter::instance()->save_email($data, ARRAY_A);
     $controls->add_message_saved();

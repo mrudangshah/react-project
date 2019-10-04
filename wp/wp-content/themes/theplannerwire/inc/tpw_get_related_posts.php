@@ -105,6 +105,7 @@ function tpw_get_related_posts() {
 
                   $tpw_tax_post->author = esc_html__(get_the_author(), 'text_domain');
                   $tpw_tax_post->author_id = get_the_author_meta('ID');
+                  $tpw_tax_post->user_login = get_the_author_meta('user_login');
                   $tpw_tax_post->author_nicename = get_the_author_meta('user_nicename');
                   $author_avatar = get_avatar( get_the_author_meta( 'ID' ));
                   $xpath = new DOMXPath(@DOMDocument::loadHTML($author_avatar));
@@ -115,10 +116,18 @@ function tpw_get_related_posts() {
                    * get the terms
                    *
                    */
-                  if( get_the_terms(get_the_ID(), $tax) ){
+                  /* get category data using get_the_category() */
+                  $categories = get_the_category();
 
-                    $tpw_tax_post->terms = get_the_terms(get_the_ID(), $tax);
-
+                  if( !empty($categories) ){
+                    $tpw_tax_post->terms = get_the_terms(get_the_ID(), 'category');
+                    foreach ($categories as $key => $category) {
+                      $tpw_tax_post->term_icon = get_field('cat_icon', 'category_'.$category->term_id );
+                      $tpw_tax_post->term_color = get_field('background_color', 'category_'.$category->term_id );
+                      $tpw_tax_post->term_save_icon = get_field('save_icon', 'category_'.$category->term_id );
+                      $tpw_tax_post->term_saved_icon = get_field('saved_icon', 'category_'.$category->term_id );
+                      $tpw_tax_post->term_share_icon = get_field('share_icon', 'category_'.$category->term_id );
+                    }
                   } else {
                     $tpw_tax_post->terms = array();
                   }

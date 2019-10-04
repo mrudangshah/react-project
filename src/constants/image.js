@@ -25,5 +25,10 @@ export const IMAGE = {
   save_spread: "/src/assets/images/save_spread.svg",
   share_spread: "/src/assets/images/share_spread.svg",
   sample_image: "/src/assets/images/sample_image.png",
+  sample_banner: "/src/assets/images/sample_banner.png",
   page_not_found: "/src/assets/images/404-Error.png",
+  comments_gray: "/src/assets/images/comment_icon_grey.svg",
+  save_gray: "/src/assets/images/save_gray.svg",
+  share_icon_gray: "/src/assets/images/share_icon_gray.svg",
+  loading: "/src/assets/images/loading_new.gif",
 }

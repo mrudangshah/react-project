@@ -40,6 +40,7 @@ function tpw_get_posts_by_slug( WP_REST_Request $request ) {
       $tpw_post->author = esc_html__(get_the_author(), 'text_domain');
       $tpw_post->author_id = get_the_author_meta('ID');
       $tpw_post->author_nicename = get_the_author_meta('user_nicename');
+      $tpw_post->user_login = get_the_author_meta('user_login');
       $author_avatar = get_avatar( get_the_author_meta( 'ID' ));
       $xpath = new DOMXPath(@DOMDocument::loadHTML($author_avatar));
       $tpw_post->author_avatar = $xpath->evaluate("string(//img/@src)");
@@ -59,6 +60,7 @@ function tpw_get_posts_by_slug( WP_REST_Request $request ) {
           array_push($bre_category_ids, $category->term_id);
           array_push($bre_categories, $category->cat_name);
           $tpw_post->category_icon = get_field('cat_icon', 'category_'.$category->term_id );
+          $tpw_post->background_color = get_field('background_color', 'category_'.$category->term_id );
         }
       }
 

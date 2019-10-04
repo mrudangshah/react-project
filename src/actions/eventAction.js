@@ -8,7 +8,7 @@ const siteurl = tpwConfig.API_URL;
  * Get EventData
  */
 export const getEvents = () => {
-  
+
   return (dispatch) => {
     
     dispatch({type:'EVENT_LOADING_START'})

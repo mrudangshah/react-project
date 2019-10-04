@@ -15,9 +15,7 @@ const memberPostsAPI = '/wp/wp-json/tpw-rest-endpoints/v1/post/members/';
 const membersAPI = '/wp/wp-json/buddypress/v1/members/';
 const endUsername = tpwConfig.ADMIN_USERNAME;
 const password = tpwConfig.ADMIN_PASSWORD;
-const sectionStyle = {
-  backgroundImage: `url(${siteurl}/src/assets/images/banner_img1.png)`
-};
+
 var HtmlToReactParser = require('html-to-react').Parser;
 
 class Member extends Component {
@@ -106,7 +104,7 @@ class Member extends Component {
         that.setState({ membershipID: memberShipId, membershipStatus: false });
         that.getMembershipName(memberShipId);
       } else{
-        that.setState({ membershipStatus: true, resultLoading: false, });
+        that.setState({ membershipStatus: true, /* resultLoading: false */ });
       }
     });
   }
@@ -120,21 +118,28 @@ class Member extends Component {
     let headers = new Headers();
     headers.set('Authorization', 'Basic ' + base64.encode(endUsername + ":" + password));
        
-    fetch(membershipsUrl, {
-      method:'GET',
-      headers: headers,
-      credentials: "same-origin",
+    axios(membershipsUrl, {
+      auth: {
+        username: endUsername,
+        password: password
+      }
     })
-    .then(function(response) { return response.json(); })
-    .then(function(jsonData) {
-      return JSON.stringify(jsonData);
-    })
-    .then(function(jsonStr) {
+    .then(function(response) {
+      var jsonStr = JSON.stringify(response.data);
       if( JSON.parse(jsonStr) != null ){
         let memName = JSON.parse(jsonStr);
         that.setState({ membershipName: memName.title });
       }
-    });
+    })
+    // .then(function(jsonData) {
+    //   return JSON.stringify(jsonData);
+    // })
+    // .then(function(jsonStr) {
+    //   if( JSON.parse(jsonStr) != null ){
+    //     let memName = JSON.parse(jsonStr);
+    //     that.setState({ membershipName: memName.title });
+    //   }
+    // });
   }
 
   /**
@@ -218,11 +223,9 @@ class Member extends Component {
    */
   handleResultLoadingText () {
     let { resultLoadingText } = this.state;
-    return <section id="user_profile">
-      <div className="container"><div className="inner_userprofile">
-        <h3>{resultLoadingText}</h3>
-      </div></div>
-      </section>
+    return <div className="container">
+      <div className="d-flex justify-content-center p-5"><h6 className="font-weight-bolder">{resultLoadingText}</h6></div>
+      </div>
   }
 
   followPeople = (item, e) => {
@@ -241,10 +244,12 @@ class Member extends Component {
    * Get Member View
    */
   getMemberView() {
-    let { userID, membershipName, memberData, resultLoadingText, noSearch, noSearchResultText, membershipStatus } = this.state;
+    let { userID, membershipName, memberData, noSearch, noSearchResultText, membershipStatus, resultLoading } = this.state;
     let parsed = memberData.avatar_urls;
     var author_avatar = ( typeof parsed === 'object') ? parsed.full : null;
-    let sample_image = siteurl+IMAGE.sample_image; // Please keep dynamic
+    let parsed_banner_img = memberData.banner_img;
+    var banner_img = ( typeof parsed_banner_img === 'object') ? parsed_banner_img : null;
+    let sample_image = siteurl+IMAGE.sample_image; 
     let boundItemClick = this.followPeople.bind(this, memberData);
     let loginUserName = 'tpwadmin';
     let currentUserName = this.props.route.match.params.username;
@@ -309,14 +314,14 @@ class Member extends Component {
                       <video controls>
                         <source src={item.acf.video.url} type="video/mp4"></source>
                       </video>
-                      : item.post_format === false ?
-                      <span><img src={ siteurl + IMAGE.trans_305 } alt="" /><img className="absoImg" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image:'' } alt="" /></span>
-                      : <span><img src={ siteurl + IMAGE.trans_305 } alt="" /><img className="absoImg" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image:'' } alt="" /></span>
+                      : item.post_format === false && item.acf !==null ?
+                      <span><img src={ siteurl + IMAGE.trans_305 } alt="" /><img className="absoImg" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image: sample_image } alt="" /></span>
+                      : <span><img src={ siteurl + IMAGE.trans_305 } alt="" /><img className="absoImg" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image: sample_image } alt="" /></span>
                       }
                       {/* <img src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:'' : ''} className="absoImg" alt="" /> */}
                     </div>
                     <div className="product_detils">
-                      <span className="cat_icon"><img src={""+item.cat_icon.url} alt={parsedSlug[0].name} /></span>
+                      <span className="cat_icon"><img src={ item.cat_icon !==null && item.cat_icon.url} alt="" /></span>
                       {/* <span className="more_view"><ion-icon name="more"></ion-icon></span> */}
                       <h4>{htmlToReactParser.parse(item.title)}</h4>
                     </div>
@@ -337,8 +342,9 @@ class Member extends Component {
     let premiumView = <div>
       <section className="banner">
           <div className="container">
-              <div className="inner_banner" style={sectionStyle}></div>
-            </div>
+          { banner_img !==null ? <div className="inner_banner" style={{backgroundImage: `url(${banner_img.url}`}}></div>
+            : <div className="inner_banner" style={{backgroundImage: `url(${siteurl+IMAGE.sample_banner}`}}></div> }
+          </div>
         </section> 
         <section id="user_profile" >
           <div className="container">
@@ -429,15 +435,15 @@ class Member extends Component {
                           <video controls>
                             <source src={item.acf.video.url} type="video/mp4"></source>
                           </video>
-                          : item.post_format === false ?
-                          <span><img src={ siteurl + IMAGE.trans_305 } alt="" /><img className="absoImg" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image:'' } alt="" /></span>
-                          : <span><img src={ siteurl + IMAGE.trans_305 } alt="" /><img className="absoImg" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image:'' } alt="" /></span>
+                          : item.post_format === false && item.acf !==null ?
+                          <span><img src={ siteurl + IMAGE.trans_305 } alt="" /><img className="absoImg" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image: sample_image } alt="" /></span>
+                          : <span><img src={ siteurl + IMAGE.trans_305 } alt="" /><img className="absoImg" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image: sample_image } alt="" /></span>
                         }
                           {/* <img src={ siteurl + IMAGE.trans_305 } alt="" />
                           <img className="absoImg" src={item.acf ? item.acf.single_featured_image? item.acf.single_featured_image.url:sample_image:'' } alt="" /> */}
                         </div>
                         <div className="product_detils">
-                          <span className="cat_icon"><img src={""+item.cat_icon.url} alt={parsedSlug[0].name} /></span>
+                          <span className="cat_icon"><img src={ item.cat_icon !==null && item.cat_icon.url} alt="" /></span>
                           {/* <span className="more_view"><ion-icon name="more"></ion-icon></span> */}
                           <h4>{htmlToReactParser.parse(item.title)}</h4>
                         </div>
@@ -468,11 +474,7 @@ class Member extends Component {
         </div></div>
         </section>
       } else{
-        return <section id="user_profile">
-        <div className="container"><div className="inner_userprofile">
-          <h3>{resultLoadingText}</h3>
-        </div></div>
-        </section>
+        return this.handleResultLoadingText()
       }
     }
   }

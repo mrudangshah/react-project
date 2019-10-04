@@ -71,10 +71,12 @@ class MeprLoginCtrl extends MeprBaseCtrl {
     }
     //END TEMP WPML FIX
     else {
-      $this->display_login_form(
-        $shortcode,
-        (isset($atts['use_redirect']) && $atts['use_redirect']=='true')
-      );
+      if ( ! is_user_logged_in() || ! isset( $atts['show_logged_in'] ) || $atts['show_logged_in'] !== 'false' ) {
+        $this->display_login_form(
+          $shortcode,
+          (isset($atts['use_redirect']) && $atts['use_redirect']=='true')
+        );
+      }
     }
 
     return ob_get_clean();
@@ -136,7 +138,7 @@ class MeprLoginCtrl extends MeprBaseCtrl {
     }
 
     if(!empty($_REQUEST['mepr_process_login_form']) && !empty($_REQUEST['errors'])) {
-      $errors = $_REQUEST['errors'];
+      $errors = array_map( 'sanitize_text_field', $_REQUEST['errors'] );
       MeprView::render('/shared/errors', get_defined_vars());
     }
 
@@ -173,7 +175,7 @@ class MeprLoginCtrl extends MeprBaseCtrl {
     $wp_user = wp_signon(
       array(
         'user_login' => $login,
-        'user_password' => sanitize_text_field( $_POST['pwd'] ),
+        'user_password' => $_POST['pwd'], // Do not need to sanitize here - it causes issues with passwords like test%12test (the %12 is stripped out)
         'remember' => isset($_POST['rememberme'])
       ),
       MeprUtils::is_ssl() //May help with the users getting logged out when going between http and https
@@ -310,6 +312,15 @@ class MeprLoginCtrl extends MeprBaseCtrl {
   }
 
   public function process_reset_password_form() {
+    // Log user out when clicking reset password link
+    if(MeprUtils::is_user_logged_in()) {
+      if(isset($_GET['action']) && $_GET['action'] == 'reset_password' && isset($_GET['mkey']) && !isset($_GET['loggedout'])) {
+        wp_destroy_current_session();
+        wp_clear_auth_cookie();
+        MeprUtils::wp_redirect($_SERVER['REQUEST_URI'] . '&loggedout=true'); // redirect to same page to flush login cookies
+      }
+    }
+
     if(isset($_POST['action']) && $_POST['action'] === 'mepr_process_reset_password_form') {
       $mepr_options = MeprOptions::fetch();
 

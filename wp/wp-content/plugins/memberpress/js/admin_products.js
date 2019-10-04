@@ -365,10 +365,14 @@
     });
     //Add highlight class to preview box
     $('#_mepr_product_is_highlighted').click(function() {
-      if($(this).is(':checked'))
+      if($(this).is(':checked')) {
         $('div.mepr-price-box').addClass('highlighted');
-      else
+        $('div.mepr-most-popular').fadeIn();
+      }
+      else {
         $('div.mepr-price-box').removeClass('highlighted');
+        $('div.mepr-most-popular').fadeOut();
+      }
     });
 
   //Who Can Purchase? stuff

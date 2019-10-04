@@ -34,6 +34,11 @@ class MeprEvent extends MeprBaseModel {
     return $mepr_db->get_one_record($mepr_db->events, $args, $return_type);
   }
 
+  public static function get_one_by_event_and_evt_id_and_evt_id_type($event, $evt_id, $evt_id_type, $return_type = OBJECT) {
+    $mepr_db = new MeprDb();
+    return $mepr_db->get_one_record($mepr_db->events, compact('event','evt_id','evt_id_type'), $return_type);
+  }
+
   public static function get_count() {
     $mepr_db = new MeprDb();
     return $mepr_db->get_count($mepr_db->events);
@@ -47,6 +52,11 @@ class MeprEvent extends MeprBaseModel {
   public static function get_count_by_evt_id_type($evt_id_type) {
     $mepr_db = new MeprDb();
     return $mepr_db->get_count($mepr_db->events, compact('evt_id_type'));
+  }
+
+  public static function get_count_by_event_and_evt_id_and_evt_id_type($event, $evt_id, $evt_id_type) {
+    $mepr_db = new MeprDb();
+    return $mepr_db->get_count($mepr_db->events, compact('event','evt_id','evt_id_type'));
   }
 
   public static function get_all($order_by = '', $limit = '') {
@@ -70,6 +80,8 @@ class MeprEvent extends MeprBaseModel {
     $mepr_db = new MeprDb();
 
     MeprHooks::do_action('mepr-event-pre-store', $this);
+
+    $this->use_existing_if_unique();
 
     $vals = (array)$this->rec;
     unset($vals['created_at']); // let mepr_db handle this
@@ -193,6 +205,46 @@ class MeprEvent extends MeprBaseModel {
     }
     else if ( $event_type == MeprEvent::$subscriptions_str ) {
       return $mepr_db->subscriptions;
+    }
+  }
+
+  /** Gets info from app/data/events.php if it exists.
+   *
+   * @return associative array if found or false if not found
+   */
+  private function event_info() {
+    $event_data = require(MEPR_DATA_PATH . '/events.php');
+
+    if(isset($event_data[$this->event])) {
+      return $event_data[$this->event];
+    }
+
+    return false;
+  }
+
+  /** Uses app/data/events.php to determine if the current event is
+   * unique -- if true, only one row can be stored for a given event,
+   * evt_id & evt_id_type.
+   *
+   * @return true/false
+   */
+  private function is_unique() {
+    $event_info = $this->event_info();
+    return (false !== $event_info && isset($event_info->unique) && $event_info->unique);
+  }
+
+  /** Copy an existing event id & args if the event is unique and another
+   * event record with the same event, evt_id & evt_id_type already exists.
+   *
+   * @return void
+   */
+  private function use_existing_if_unique() {
+    if($this->is_unique()) {
+      $existing_event = self::get_one_by_event_and_evt_id_and_evt_id_type($this->event, $this->evt_id, $this->evt_id_type);
+      if(!empty($existing_event)) {
+        $this->id = $existing_event->id;
+        $this->args = $existing_event->args;
+      }
     }
   }
 } //End class

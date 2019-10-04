@@ -209,13 +209,8 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'extra_capabilities' => array(),
 			'xprofile'           => $this->xprofile_data( $user->ID ),
 		);
+
 		// Avatars.
-		// if( get_avatar( $user->ID, 256 ) !== null ){
-		// 	//$author_avatar_full = "";
-		// 	$author_avatar_full = get_avatar( $user->ID, 256 );
-		// }else {
-		// 	$author_avatar_full = 'd';
-		// }
 		$author_avatar_full = get_avatar( $user->ID, 256 );
 		$author_avatar_thumb = bp_core_fetch_avatar( array(
 				'item_id' => $user->ID,
@@ -228,6 +223,9 @@ class BP_REST_Members_Endpoint extends WP_REST_Users_Controller {
 			'full'  => $xpath_full->evaluate("string(//img/@src)"),
 			'thumb' => $xpath_thumb->evaluate("string(//img/@src)"),
 		);
+
+		// User Banner Image
+		$data['banner_img'] = get_field('member_banner_image', 'user_'.$user->ID);
 
 		// User Role
 		$user_role = get_userdata($user->ID);

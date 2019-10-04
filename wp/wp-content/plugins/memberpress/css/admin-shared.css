@@ -376,6 +376,34 @@ table.mepr-addons-table tr th {
   font-size: 120%;
 }
 
+.mepr-payment-option-prompt {
+  background: rgba(139,139,150,.1);
+  box-shadow: 0 0 1px #bbb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1em;
+  min-height: 100px;
+  width: 600px;
+  text-align: center;
+}
+
+.mepr-payment-option-prompt.connected {
+  background: #CBFECF;
+  box-shadow: none;
+  border: 1px solid #86C881;
+}
+
+.button-secondary.mepr_stripe_disconnect_button:hover {
+  color: #ff291f;
+}
+
+.mepr_stripe_disconnect_button .dashicons-warning {
+  display: inline-block;
+  margin-top: 3px;
+}
+
 /* Override for simplegrid styles */
 .grid.mepr-left-aligned-grid {
   margin: 0 !important;
@@ -392,6 +420,31 @@ table.mepr-addons-table tr th {
 }
 #wpcontent #mp-admin-header img.mp-logo {
   height: 36px;
+}
+
+.mepr-account-connected {
+  padding: 20px;
+  background-color: #CBFECF;
+  border: 1px solid #86C881;
+}
+
+.mepr-account-connected table th {
+  min-width: 200px;
+  text-align: left;
+}
+
+.mepr-warning-notice-icon {
+  color: #ffb900 !important;
+  font-size: 32px !important;
+  vertical-align: top !important;
+}
+
+.mepr-warning-notice-title {
+  vertical-align: top !important;
+  margin-left: 18px !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  line-height: 32px !important;
 }
 
 @media only screen and (max-width: 1050px) {

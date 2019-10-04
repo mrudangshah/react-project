@@ -561,11 +561,40 @@ function my_post_type_args( $args, $post_type ) {
 
 	if ( 'espresso_events' === $post_type ) {
 		$args['show_in_rest'] = true;
-
-		// Optionally customize the rest_base or rest_controller_class
-		// $args['rest_base']             = 'books';
-		// $args['rest_controller_class'] = 'WP_REST_Posts_Controller';
 	}
 
 	return $args;
+}
+
+// ADD NEW COLUMN
+function expiration_columns_head($defaults) {
+	$defaults['expiration_date'] = 'Sponsored</br> Date';
+	return $defaults;
+}
+
+// Display expiration date status at WP column
+function expiration_columns_content($column_name, $post_ID) {
+	if ($column_name == 'expiration_date') {
+		$exp_date = get_field('expiration_date',$post_ID);
+		if( $exp_date ){
+			$current_date = date('Ymd');
+			$expiration_date = date_create($exp_date);
+			$expiration_date = date_format($expiration_date, 'm/d/Y');
+			if( $exp_date > $current_date )
+				echo '<abbr style="color:green">Existing</abbr></br><abbr style="color:green; text-decoration: underline dotted" >'.$expiration_date.'</abbr>';	
+			else 
+				echo '<abbr style="color:red">Expired</abbr></br><abbr style="color:red; text-decoration: underline dotted">'.$expiration_date.'</abbr>';
+		}
+		else
+			echo '<abbr>--/--/----</abbr>';
+	}
+}
+add_filter('manage_post_posts_columns', 'expiration_columns_head', 10);
+add_action('manage_post_posts_custom_column', 'expiration_columns_content', 10, 2);
+
+add_action('admin_head', 'expiration_column_width');
+function expiration_column_width() {
+    echo '<style type="text/css">';
+    echo '#expiration_date{ width:100px !important; }';
+    echo '</style>';
 }

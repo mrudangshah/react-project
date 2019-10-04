@@ -90,8 +90,11 @@ class MeprGroupsHelper {
     $user = MeprUtils::get_currentuserinfo(); //If not logged in, $user will be false
     $active = true; //Always true for now - that way users can click the button and see the custom "you don't have access" message now
 
+    $group_classes_str = ($product->is_highlighted) ? 'highlighted' : '';
+    $group_classes_str = MeprHooks::apply_filters('mepr-group-css-classes-string', $group_classes_str, $product, $group, $preview);
+
     ?>
-    <div id="mepr-price-box-<?php echo $product->ID; ?>" class="mepr-price-box <?php echo ($product->is_highlighted)?'highlighted':''; ?>">
+    <div id="mepr-price-box-<?php echo $product->ID; ?>" class="mepr-price-box <?php echo $group_classes_str; ?>">
       <div class="mepr-most-popular"><?php _e('Most Popular', 'memberpress'); ?></div>
       <div class="mepr-price-box-head">
         <div class="mepr-price-box-title"><?php echo $product->pricing_title; ?></div>

@@ -158,14 +158,28 @@ class MeprAppCtrl extends MeprBaseCtrl {
   }
 
   public static function columns($columns) {
+    global $post_type, $post;
+
     $except = array('attachment', 'memberpressproduct');
     $except = MeprHooks::apply_filters('mepr-hide-cpt-access-column', $except);
 
-    if(isset($_GET['post_type'])) {
-      $cpt = get_post_type_object($_GET['post_type']);
+    if(isset($_GET['post_type']) || (isset($post_type) && !empty($post_type)) || (isset($post->post_type) && !empty($post->post_type))) {
+      if(!empty($_GET['post_type'])) {
+        $cpt = get_post_type_object($_GET['post_type']);
+      }
+      elseif(!empty($post_type)) {
+        $cpt = get_post_type_object($post_type);
+      }
+      elseif(!empty($post->post_type)) { // Try individual post last
+        $cpt = get_post_type_object($post->post_type);
+      }
+      else {
+        return $columns; // Just give up trying
+      }
 
-      if(in_array($_GET['post_type'], $except) || !$cpt->public)
+      if(in_array($cpt->name, $except) || !$cpt->public) {
         return $columns;
+      }
     }
 
     $ak = array_keys($columns);
@@ -636,7 +650,7 @@ class MeprAppCtrl extends MeprBaseCtrl {
     }
 
     if($global_styles || $is_group_page) {
-      wp_enqueue_style('mp-plans-css', MeprUtils::load_price_table_css_url());
+      wp_enqueue_style('mp-plans-css', MEPR_CSS_URL . '/plans.min.css', array(), MEPR_VERSION);
     }
   }
 
@@ -671,7 +685,8 @@ class MeprAppCtrl extends MeprBaseCtrl {
     wp_localize_script('mepr-tooltip', 'MeprTooltip', array( 'show_about_notice' => self::show_about_notice(),
                                                              'about_notice' => self::about_notice() ));
     wp_register_script('mepr-settings-table-js', MEPR_JS_URL.'/settings_table.js', array('jquery'), MEPR_VERSION);
-    wp_enqueue_script('mepr-admin-shared-js', MEPR_JS_URL.'/admin_shared.js', array('jquery', 'jquery-magnific-popup', 'mepr-settings-table-js'), MEPR_VERSION);
+    wp_register_script('mepr-cookie-js', MEPR_JS_URL.'/js.cookie.min.js', array(), '2.2.1');
+    wp_enqueue_script('mepr-admin-shared-js', MEPR_JS_URL.'/admin_shared.js', array('jquery', 'jquery-magnific-popup', 'mepr-settings-table-js', 'mepr-cookie-js'), MEPR_VERSION);
 
     //Widget in the dashboard stuff
     if($hook == 'index.php') {
@@ -748,8 +763,8 @@ class MeprAppCtrl extends MeprBaseCtrl {
       else if(!empty($plugin) && $plugin == 'mepr' && isset($_REQUEST['pmt']) &&
               !empty($_REQUEST['pmt']) && !empty($action)) {
         $mepr_options = MeprOptions::fetch();
-        if(($obj = $mepr_options->payment_method($_REQUEST['pmt'])) &&
-           ($obj instanceof MeprBaseRealGateway)) {
+        $obj = MeprHooks::apply_filters('mepr_gateway_notifier_obj', $mepr_options->payment_method($_REQUEST['pmt']), $action, $_REQUEST['pmt']);
+        if( $obj && ( $obj instanceof MeprBaseRealGateway ) ) {
           $notifiers = $obj->notifiers();
           if( isset($notifiers[$action]) ) {
             call_user_func(array($obj,$notifiers[$action]));
@@ -843,7 +858,9 @@ class MeprAppCtrl extends MeprBaseCtrl {
   public static function add_sidebar_widgets() {
     try {
       $account_ctrl = MeprCtrlFactory::fetch('account');
-      wp_register_sidebar_widget('mepr-account-links', __('MemberPress Account Links', 'memberpress'), array($account_ctrl,'account_links_widget'));
+      wp_register_sidebar_widget( 'mepr-account-links', __('MemberPress Account Links', 'memberpress'), array($account_ctrl,'account_links_widget') );
+      //control func below doesn't do anything, but without it a bunch of debug notices are logged when in the theme customizer
+      wp_register_widget_control( 'mepr-account-links', __('MemberPress Account Links', 'memberpress'), function($args=array(), $params=array()){} );
     }
     catch(Exception $e) {
       // Silently fail if the account controller is absent

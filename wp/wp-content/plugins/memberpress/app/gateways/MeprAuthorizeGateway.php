@@ -89,15 +89,18 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
     $this->email_status("Silent Post Just Came In (" . $_SERVER['REQUEST_METHOD'] . "):\n" . MeprUtils::object_to_string($_REQUEST, true) . "\n", $this->settings->debug);
 
     if($this->validate_sp_md5()) {
-      if(isset($_REQUEST['x_response_code']) && $_REQUEST['x_response_code'] > 1)
+      if(isset($_REQUEST['x_response_code']) && $_REQUEST['x_response_code'] > 1) {
         return $this->record_payment_failure();
-      else if(isset($_REQUEST['x_subscription_id']) and !empty($_REQUEST['x_subscription_id'])) {
-        $sub = MeprSubscription::get_one_by_subscr_id($_REQUEST['x_subscription_id']);
-        if(!$sub) { return false; }
-        return $this->record_subscription_payment();
       }
-      else if(strtoupper($_REQUEST['x_type']) == 'VOID' || strtoupper($_REQUEST['x_type']) == 'CREDIT')
-        return $this->record_refund();
+      // AUTHORIZE.NET HAS DEPRECATED MD5, BUT SILENT POST IS STILL AROUND
+      // WE'RE GOING TO USE SP TO CAPTURE FAILED PAYMENTS STILL
+      // else if(isset($_REQUEST['x_subscription_id']) and !empty($_REQUEST['x_subscription_id'])) {
+        // $sub = MeprSubscription::get_one_by_subscr_id($_REQUEST['x_subscription_id']);
+        // if(!$sub) { return false; }
+        // return $this->record_subscription_payment();
+      // }
+      // else if(strtoupper($_REQUEST['x_type']) == 'VOID' || strtoupper($_REQUEST['x_type']) == 'CREDIT')
+        // return $this->record_refund();
 
       // Nothing applied so let's bail
       return false;
@@ -126,10 +129,14 @@ class MeprAuthorizeGateway extends MeprBaseRealGateway {
   * @see https://developer.authorize.net/support/hash_upgrade/
   */
   public function validate_sp_md5() {
-    $md5_input = $this->hash . $this->settings->login_name . $_REQUEST['x_trans_id'] . $_REQUEST['x_amount'];
-    $md5 = md5($md5_input);
+    // $md5_input = $this->hash . $this->settings->login_name . $_REQUEST['x_trans_id'] . $_REQUEST['x_amount'];
+    // $md5 = md5($md5_input);
 
-    return strtoupper($md5) === strtoupper($_REQUEST['x_MD5_Hash']);
+    // return strtoupper($md5) === strtoupper($_REQUEST['x_MD5_Hash']);
+
+    // AUTHORIZE.NET HAS DEPRECATED MD5, BUT SILENT POST IS STILL AROUND
+    // WE'RE GOING TO USE SP TO CAPTURE FAILED PAYMENTS STILL
+    return true;
   }
 
   /** Used to send data to a given payment gateway. In gateways which redirect
